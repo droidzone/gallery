@@ -10,18 +10,24 @@ import 'package:flutter/material.dart';
 class DirectoryBunch {
   String path;
   String name;
-  String imgPath;
+  String? imgPath;
 
-  DirectoryBunch(
-      {required this.path, required this.name, required this.imgPath});
+  DirectoryBunch({required this.path, required this.name, this.imgPath});
 
   Widget getThumbnail() {
-    var file = File(imgPath);
+    if (imgPath == null) {
+      return Icon(
+        Icons.folder,
+        size: 100,
+        color: Colors.blue,
+      );
+    }
+    var file = File(imgPath!);
     try {
       var fileType = FileSystemEntity.typeSync(file.path);
       if (fileType == FileSystemEntityType.file) {
         return Image.file(
-          File(imgPath),
+          File(imgPath!),
           height: 100,
           width: 100,
         );

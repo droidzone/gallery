@@ -1,11 +1,15 @@
 // ignore_for_file: prefer_const_constructors
+import 'package:flutter/foundation.dart';
 import 'package:gallery/views/picture_view.dart';
+import 'package:gallery/views/video_view.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:gallery/structure/directory_bunch.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:path/path.dart' as p;
 
 class FolderView extends StatefulWidget {
   const FolderView({Key? key, required this.directoryBunch}) : super(key: key);
@@ -17,21 +21,45 @@ class FolderView extends StatefulWidget {
 }
 
 class _FolderViewState extends State<FolderView> {
-  List<FileSystemEntity> _files = [];
+  List<FileSystemEntity> _AllFiles = [];
+  List<FileSystemEntity> _FilteredFiles = [];
 
   @override
   void initState() {
     super.initState();
-    _listFiles();
+    _buildFileFilter();
   }
 
-  Future<void> _listFiles() async {
+  void _buildFileFilter() {
+    print("Building file filter...");
+    print("Directory: ${widget.directoryBunch.path}");
+    List<FileSystemEntity> files = [];
     final Directory directory = Directory(widget.directoryBunch.path);
+    List<FileSystemEntity> _tmpFiles = directory.listSync();
+    // _files = directory.listSync();
+    print("Files: $_tmpFiles");
+
+    for (var file in _tmpFiles) {
+      if (file is File) {
+        print("$file is a file");
+      } else {
+        print("$file is not a file");
+      }
+      files.add(file);
+    }
     setState(() {
-      _files = directory.listSync();
-      print("Files: $_files");
+      _AllFiles = files;
+      _FilteredFiles = files;
     });
   }
+
+  // Future<void> _listFiles() async {
+  //   final Directory directory = Directory(widget.directoryBunch.path);
+  //   setState(() {
+  //     _AllFiles = directory.listSync();
+  //     print("Files: $_AllFiles");
+  //   });
+  // }
 
   bool _isMediaFile(String filePath) {
     final RegExp regExp =
@@ -39,16 +67,39 @@ class _FolderViewState extends State<FolderView> {
     return regExp.hasMatch(filePath);
   }
 
-  Future<void> loadFolder(context, path, name, imgpath) async {
+  Future<void> loadFolder(BuildContext context, selectedFolder) async {
+    // context, path, name, imgpath)
+
+    List<FileSystemEntity> files =
+        await Directory(selectedFolder.path).list().toList();
+    String dirName = basename(selectedFolder.path);
+
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return FolderView(
         directoryBunch: DirectoryBunch(
-          path: path,
-          name: name,
-          imgPath: imgpath,
+          path: selectedFolder.path,
+          name: dirName,
+          imgPath: files[0].path,
         ),
       );
     }));
+  }
+
+  Future<Uint8List> _getThumbnail(String path) async {
+    String extension = p.extension(path).toLowerCase();
+    if (extension == '.mp4') {
+      final uint8list = await VideoThumbnail.thumbnailData(
+        video: path,
+        imageFormat: ImageFormat.JPEG,
+        maxWidth:
+            128, // specify the width of the thumbnail, let the height auto-scaled to keep the source aspect ratio
+        quality: 25,
+      );
+      return uint8list!;
+    } else {
+      final file = File(path);
+      return file.readAsBytesSync();
+    }
   }
 
   @override
@@ -59,23 +110,32 @@ class _FolderViewState extends State<FolderView> {
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
         ),
-        itemCount: _files.length,
+        itemCount: _FilteredFiles.length,
         itemBuilder: (context, index) {
-          if (_isMediaFile(_files[index].path)) {
-            DateTime modificationDate = _files[index].statSync().modified;
+          if (_isMediaFile(_FilteredFiles[index].path)) {
+            print("Media File found: ${_FilteredFiles[index]}");
+            DateTime modificationDate =
+                _FilteredFiles[index].statSync().modified;
             String formattedDate =
                 DateFormat('dd-MM-yyyy').format(modificationDate);
 
-            String fileName = basename(_files[index].path);
+            String fileName = basename(_FilteredFiles[index].path);
             return InkWell(
               onTap: () {
-                print('Tapped on $fileName');
+                print('Tapped on media file $fileName');
+                String extension =
+                    p.extension(_FilteredFiles[index].path).toLowerCase();
                 Navigator.push(context, MaterialPageRoute(builder: (context) {
-                  return FullScreenImageView(
-                    imagePath: _files[index].path,
-                  );
+                  if (extension == '.mp4') {
+                    return FullScreenVideoView(
+                      videoPath: _FilteredFiles[index].path,
+                    );
+                  } else {
+                    return FullScreenImageView(
+                      imagePath: _FilteredFiles[index].path,
+                    );
+                  }
                 }));
-                // FullScreenImageView
               },
               child: Column(
                 children: <Widget>[
@@ -85,13 +145,32 @@ class _FolderViewState extends State<FolderView> {
                   ),
                   Expanded(
                     flex: 2,
-                    child: Container(
-                      child: Image.file(
-                        File(_files[index].path),
-                        fit: BoxFit.contain,
-                      ),
+                    child: FutureBuilder(
+                      future: _getThumbnail(_AllFiles[index].path),
+                      builder: (BuildContext context,
+                          AsyncSnapshot<Uint8List> snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done &&
+                            snapshot.hasData) {
+                          return Image.memory(
+                            snapshot.data!,
+                            fit: BoxFit.contain,
+                          );
+                        } else {
+                          return CircularProgressIndicator();
+                        }
+                      },
                     ),
                   ),
+
+                  // Expanded(
+                  //   flex: 2,
+                  //   child: Container(
+                  //     child: Image.file(
+                  //       File(_AllFiles[index].path),
+                  //       fit: BoxFit.contain,
+                  //     ),
+                  //   ),
+                  // ),
                   Expanded(
                     child: Align(
                         alignment: Alignment.center,
@@ -100,16 +179,18 @@ class _FolderViewState extends State<FolderView> {
                 ],
               ),
             );
-          } else if (_files[index] is Directory) {
-            String dirName = basename(_files[index].path);
+          } else if (_AllFiles[index] is Directory) {
+            print("Directory found: ${_AllFiles[index]}");
+            String dirName = basename(_AllFiles[index].path);
             return InkWell(
               onTap: () async {
-                print('Tapped on $dirName');
-                List<FileSystemEntity> files =
-                    await Directory(_files[index].path).list().toList();
-                print("Files: $files");
+                print('Tapped on folder $dirName');
+
+                // print("Files: $files");
                 print("Loading new folder view");
-                loadFolder(context, _files[index].path, dirName, files[0].path);
+                loadFolder(context, _AllFiles[index]);
+                // loadFolder(
+                //     context, _AllFiles[index].path, dirName, files[0].path);
                 // print('Files in $directory: $files');
                 // tmpFolderList.add(directory);
               },
@@ -131,6 +212,7 @@ class _FolderViewState extends State<FolderView> {
               ),
             );
           } else {
+            print("Found non media file: ${_AllFiles[index]}. Not displaying");
             return Container();
           }
         },

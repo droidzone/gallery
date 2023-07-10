@@ -81,6 +81,7 @@ class _StartViewState extends State<StartView> {
       ];
 
       await requestPermission(Permission.photos);
+      await requestPermission(Permission.videos);
       for (String directory in mediaDirectories) {
         String path = "${dir.path.split("Android")[0]}$directory";
         try {
