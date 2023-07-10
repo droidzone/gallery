@@ -36,61 +36,92 @@ class _FullScreenVideoViewState extends State<FullScreenVideoView> {
       // ...
       body: Container(
         alignment: Alignment.center,
+        height: double.infinity,
         child: _controller.value.isInitialized
             ? AspectRatio(
                 aspectRatio: _controller.value.aspectRatio,
-                child: Column(
+                child: Stack(
                   children: <Widget>[
-                    Expanded(child: VideoPlayer(_controller)),
-                    ValueListenableBuilder<double>(
-                      valueListenable: _progress,
-                      builder: (context, value, child) {
-                        return Slider(
-                          value: value,
-                          min: 0.0,
-                          max: _controller.value.duration.inSeconds.toDouble(),
-                          onChanged: (double newValue) {
-                            _controller
-                                .seekTo(Duration(seconds: newValue.toInt()));
-                          },
-                        );
-                      },
+                    VideoPlayer(
+                      _controller,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      // top: 0,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _controller.value.isPlaying
+                                    ? _controller.pause()
+                                    : _controller.play();
+                              });
+                            },
+                            icon: Icon(
+                              _controller.value.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              color: Colors.blue[900],
+                            ),
+                          ),
+                          Expanded(
+                            child: ValueListenableBuilder<double>(
+                              valueListenable: _progress,
+                              builder: (context, value, child) {
+                                return Slider(
+                                  value: value,
+                                  min: 0.0,
+                                  max: _controller.value.duration.inSeconds
+                                      .toDouble(),
+                                  onChanged: (double newValue) {
+                                    _controller.seekTo(
+                                        Duration(seconds: newValue.toInt()));
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               )
             : CircularProgressIndicator(),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _controller.value.isPlaying
-                        ? _controller.pause()
-                        : _controller.play();
-                  });
-                },
-                child: Row(
-                  children: [
-                    Text(_controller.value.isPlaying ? 'Pause' : 'Play'),
-                    Icon(
-                      _controller.value.isPlaying
-                          ? Icons.pause
-                          : Icons.play_arrow,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      // bottomNavigationBar: Padding(
+      //   padding: const EdgeInsets.all(8.0),
+      //   child: SingleChildScrollView(
+      //     scrollDirection: Axis.horizontal,
+      //     child: Row(
+      //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //       children: [
+      //         InkWell(
+      //           onTap: () {
+      //             setState(() {
+      //               _controller.value.isPlaying
+      //                   ? _controller.pause()
+      //                   : _controller.play();
+      //             });
+      //           },
+      //           child: Row(
+      //             children: [
+      //               Text(_controller.value.isPlaying ? 'Pause' : 'Play'),
+      //               Icon(
+      //                 _controller.value.isPlaying
+      //                     ? Icons.pause
+      //                     : Icons.play_arrow,
+      //               ),
+      //             ],
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //   ),
+      // ),
 
       // floatingActionButton: FloatingActionButton(
       //   onPressed: () {

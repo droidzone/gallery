@@ -1,4 +1,5 @@
 // ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/foundation.dart';
 import 'package:gallery/views/picture_view.dart';
 import 'package:gallery/views/video_view.dart';
@@ -53,14 +54,6 @@ class _FolderViewState extends State<FolderView> {
     });
   }
 
-  // Future<void> _listFiles() async {
-  //   final Directory directory = Directory(widget.directoryBunch.path);
-  //   setState(() {
-  //     _AllFiles = directory.listSync();
-  //     print("Files: $_AllFiles");
-  //   });
-  // }
-
   bool _isMediaFile(String filePath) {
     final RegExp regExp =
         RegExp(r"\.(gif|jpe?g|tiff?|png|webp|bmp|mp4)$", caseSensitive: false);
@@ -102,10 +95,93 @@ class _FolderViewState extends State<FolderView> {
     }
   }
 
+  void _sortByName(bool ascending) {
+    _FilteredFiles.sort((a, b) {
+      return ascending
+          ? basename(a.path).compareTo(basename(b.path))
+          : basename(b.path).compareTo(basename(a.path));
+    });
+    setState(() {});
+  }
+
+  void _sortByCreationDate(bool ascending) {
+    _FilteredFiles.sort((a, b) {
+      return ascending
+          ? a.statSync().changed.compareTo(b.statSync().changed)
+          : b.statSync().changed.compareTo(a.statSync().changed);
+    });
+    setState(() {});
+  }
+
+  void _sortByModificationDate(bool ascending) {
+    _FilteredFiles.sort((a, b) {
+      return ascending
+          ? a.statSync().modified.compareTo(b.statSync().modified)
+          : b.statSync().modified.compareTo(a.statSync().modified);
+    });
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: null,
+      appBar: AppBar(
+        title: Text('Gallery'),
+        actions: <Widget>[
+          // Add a button for Sort
+          PopupMenuButton<String>(
+            icon: Icon(Icons.sort), // Use an icon button
+            onSelected: (String result) {
+              switch (result) {
+                case 'Name Ascending':
+                  _sortByName(true);
+                  break;
+                case 'Name Descending':
+                  _sortByName(false);
+                  break;
+                case 'Creation Date Ascending':
+                  _sortByCreationDate(true);
+                  break;
+                case 'Creation Date Descending':
+                  _sortByCreationDate(false);
+                  break;
+                case 'Modification Date Ascending':
+                  _sortByModificationDate(true);
+                  break;
+                case 'Modification Date Descending':
+                  _sortByModificationDate(false);
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'Name Ascending',
+                child: Text('Name Ascending'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'Name Descending',
+                child: Text('Name Descending'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'Creation Date Ascending',
+                child: Text('Creation Date Ascending'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'Creation Date Descending',
+                child: Text('Creation Date Descending'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'Modification Date Ascending',
+                child: Text('Modification Date Ascending'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'Modification Date Descending',
+                child: Text('Modification Date Descending'),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: GridView.builder(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -144,7 +220,7 @@ class _FolderViewState extends State<FolderView> {
                         alignment: Alignment.center, child: Text(fileName)),
                   ),
                   Expanded(
-                    flex: 2,
+                    flex: 5,
                     child: FutureBuilder(
                       future: _getThumbnail(_AllFiles[index].path),
                       builder: (BuildContext context,
@@ -161,16 +237,6 @@ class _FolderViewState extends State<FolderView> {
                       },
                     ),
                   ),
-
-                  // Expanded(
-                  //   flex: 2,
-                  //   child: Container(
-                  //     child: Image.file(
-                  //       File(_AllFiles[index].path),
-                  //       fit: BoxFit.contain,
-                  //     ),
-                  //   ),
-                  // ),
                   Expanded(
                     child: Align(
                         alignment: Alignment.center,
@@ -185,14 +251,8 @@ class _FolderViewState extends State<FolderView> {
             return InkWell(
               onTap: () async {
                 print('Tapped on folder $dirName');
-
-                // print("Files: $files");
                 print("Loading new folder view");
                 loadFolder(context, _AllFiles[index]);
-                // loadFolder(
-                //     context, _AllFiles[index].path, dirName, files[0].path);
-                // print('Files in $directory: $files');
-                // tmpFolderList.add(directory);
               },
               child: Column(
                 children: <Widget>[
