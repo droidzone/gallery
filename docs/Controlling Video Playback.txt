@@ -1,0 +1,47 @@
+
+Expanded(
+child: ValueListenableBuilder<double>(
+    valueListenable: _progress,
+    builder: (context, value, child) {
+    return Slider(
+        value: value,
+        min: 0.0,
+        max: _controller.value.duration.inSeconds
+            .toDouble(),
+        onChanged: (double newValue) {
+        _controller.seekTo(Duration(
+            seconds: newValue.toInt()));
+        },
+    );
+    },
+),
+),
+
+
+Mute and Unmute buttons:
+
+IconButton(
+icon: CircleAvatar(
+    backgroundColor: Colors.white,
+    child: Icon(
+    _controller.value.volume == 0
+        ? Icons.volume_off
+        : Icons.volume_up,
+    color: _controller.value.volume == 0
+        ? Colors.red
+        : Colors.blue[900],
+    ),
+),
+onPressed: () {
+    setState(() {
+    // Check if the video is currently muted
+    if (_controller.value.volume == 0) {
+        // If the video is muted, unmute it by setting the volume to 1
+        _controller.setVolume(1);
+    } else {
+        // If the video is not muted, mute it by setting the volume to 0
+        _controller.setVolume(0);
+    }
+    });
+},
+),
