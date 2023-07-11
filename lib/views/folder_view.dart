@@ -25,6 +25,7 @@ class FolderView extends StatefulWidget {
 class _FolderViewState extends State<FolderView> {
   List<FileSystemEntity> _AllFiles = [];
   List<FileSystemEntity> _FilteredFiles = [];
+  List<File> _selectedFiles = [];
 
   @override
   void initState() {
@@ -157,6 +158,14 @@ class _FolderViewState extends State<FolderView> {
       appBar: AppBar(
         title: Text('Gallery'),
         actions: <Widget>[
+          _selectedFiles.length > 0
+              ? IconButton(
+                  icon: Icon(Icons.copy),
+                  onPressed: () {
+                    print("Copy button pressed");
+                  },
+                )
+              : Container(),
           // Add a button for Sort
           PopupMenuButton<String>(
             icon: Icon(Icons.sort), // Use an icon button
@@ -209,6 +218,7 @@ class _FolderViewState extends State<FolderView> {
               ),
             ],
           ),
+          // Add a normal action button for Copy
         ],
       ),
       body: _FilteredFiles.length == 0
@@ -232,55 +242,91 @@ class _FolderViewState extends State<FolderView> {
 
                   String fileName = basename(_FilteredFiles[index].path);
                   return InkWell(
-                    onTap: () {
-                      print('Tapped on media file $fileName');
-                      String extension =
-                          p.extension(_FilteredFiles[index].path).toLowerCase();
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) {
-                        if (extension == '.mp4') {
-                          return FullScreenVideoView(
-                            videoPath: _FilteredFiles[index].path,
-                          );
+                    onLongPress: () {
+                      setState(() {
+                        if (_selectedFiles.contains(_FilteredFiles[index])) {
+                          _selectedFiles.remove(_FilteredFiles[index] as File);
                         } else {
-                          return FullScreenImageView(
-                            imagePath: _FilteredFiles[index].path,
-                          );
+                          _selectedFiles.add(_FilteredFiles[index] as File);
                         }
-                      }));
+                      });
                     },
-                    child: Column(
-                      children: <Widget>[
-                        Expanded(
-                          child: Align(
-                              alignment: Alignment.center,
-                              child: Text(fileName)),
-                        ),
-                        Expanded(
-                          flex: 5,
-                          child: FutureBuilder(
-                            future: _getThumbnail(_AllFiles[index].path),
-                            builder: (BuildContext context,
-                                AsyncSnapshot<Uint8List> snapshot) {
-                              if (snapshot.connectionState ==
-                                      ConnectionState.done &&
-                                  snapshot.hasData) {
-                                return Image.memory(
-                                  snapshot.data!,
-                                  fit: BoxFit.contain,
-                                );
-                              } else {
-                                return CircularProgressIndicator();
-                              }
-                            },
+                    onTap: () {
+                      if (_selectedFiles.isNotEmpty) {
+                        setState(() {
+                          if (_selectedFiles.contains(_FilteredFiles[index])) {
+                            _selectedFiles
+                                .remove(_FilteredFiles[index] as File);
+                          } else {
+                            _selectedFiles.add(_FilteredFiles[index] as File);
+                          }
+                        });
+                      } else {
+                        print('Tapped on media file $fileName');
+                        String extension = p
+                            .extension(_FilteredFiles[index].path)
+                            .toLowerCase();
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) {
+                          if (extension == '.mp4') {
+                            return FullScreenVideoView(
+                              videoPath: _FilteredFiles[index].path,
+                            );
+                          } else {
+                            return FullScreenImageView(
+                              imagePath: _FilteredFiles[index].path,
+                            );
+                          }
+                        }));
+                      }
+                    },
+                    child: Container(
+                      color: _selectedFiles.contains(_FilteredFiles[index])
+                          ? Colors.green.withOpacity(0.3)
+                          : null,
+                      // decoration: BoxDecoration(
+                      //   border: Border.all(
+                      //     color: _selectedFiles.contains(_FilteredFiles[index])
+                      //         ? Colors.blue
+                      //         : Colors.transparent,
+                      //     width: 3.0,
+                      //   ),
+                      // ),
+                      child: Column(
+                        children: <Widget>[
+                          Expanded(
+                            child: Align(
+                                alignment: Alignment.center,
+                                child: Wrap(
+                                  children: [Text(fileName)],
+                                )),
                           ),
-                        ),
-                        Expanded(
-                          child: Align(
-                              alignment: Alignment.center,
-                              child: Text('${formattedDate.toString()}')),
-                        ),
-                      ],
+                          Expanded(
+                            flex: 5,
+                            child: FutureBuilder(
+                              future: _getThumbnail(_AllFiles[index].path),
+                              builder: (BuildContext context,
+                                  AsyncSnapshot<Uint8List> snapshot) {
+                                if (snapshot.connectionState ==
+                                        ConnectionState.done &&
+                                    snapshot.hasData) {
+                                  return Image.memory(
+                                    snapshot.data!,
+                                    fit: BoxFit.contain,
+                                  );
+                                } else {
+                                  return CircularProgressIndicator();
+                                }
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: Align(
+                                alignment: Alignment.center,
+                                child: Text('${formattedDate.toString()}')),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 } else if (_AllFiles[index] is Directory) {
