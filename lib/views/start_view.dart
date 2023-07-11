@@ -48,20 +48,12 @@ class _StartViewState extends State<StartView> {
 
     if (status.isPermanentlyDenied) {
       print("Permission is permanently denied");
-      // The user opted to never again see the permission request dialog for this
-      // app. The only way to change the permission's status now is to let the
-      // user manually enable it in the system settings.
-      openAppSettings();
     } else if (status.isDenied) {
       print("Permission is denied");
-      // The user did not grant the permission.
-      // You can display the permission dialog again and ask the user for
-      // permission.
       status = await permission.request();
       print("Permission status on requesting again: $status");
     } else {
       print("Permission is not permanently denied");
-      // You can request the permission again.
       status = await permission.request();
     }
   }
