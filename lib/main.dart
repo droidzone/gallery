@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/stores/initial_state.dart';
 import 'package:gallery/stores/reducer.dart';
@@ -26,13 +27,16 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Super Gallery',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return StoreProvider(
+      store: store,
+      child: MaterialApp(
+        title: 'Super Gallery',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const StartView(),
       ),
-      home: const StartView(),
     );
   }
 }

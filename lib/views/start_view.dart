@@ -1,10 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:gallery/stores/actions.dart';
+import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/views/folder_list_view.dart';
+import 'package:gallery/widgets/bottom_nav_bar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:redux/redux.dart';
 
 class StartView extends StatefulWidget {
   const StartView({super.key});
@@ -15,7 +20,7 @@ class StartView extends StatefulWidget {
 
 class _StartViewState extends State<StartView> {
   List<FileSystemEntity> files = [];
-  String _activeBottomNavItemLabel = "Folders";
+
   List<String> availableDirectories = [];
   List<DirectoryBunch> directories = [];
 
@@ -23,22 +28,6 @@ class _StartViewState extends State<StartView> {
   void initState() {
     super.initState();
     listMediaDirectories();
-    // getFiles();
-  }
-
-  List<BottomNavigationBarItem> _buildBottomNavBarItems() {
-    const List<Map<String, dynamic>> navBarItemsData = [
-      {'icon': Icons.photo, 'label': 'Media'},
-      {'icon': Icons.folder, 'label': 'Folders'},
-      {'icon': Icons.favorite, 'label': 'Favorites'},
-      // {'icon': Icons.person_add, 'label': 'Registration'},
-    ];
-    return navBarItemsData.map((itemData) {
-      return BottomNavigationBarItem(
-        icon: Icon(itemData['icon']),
-        label: itemData['label'],
-      );
-    }).toList();
   }
 
   Future requestPermission(Permission permission) async {
@@ -119,43 +108,17 @@ class _StartViewState extends State<StartView> {
     }
   }
 
-  int _getIndexOfActiveLabel() {
-    return _buildBottomNavBarItems()
-        .indexWhere((item) => item.label == _activeBottomNavItemLabel);
-  }
-
-  void _onBottomNavItemTapped(int index) {
-    // Store<AppState> store = StoreProvider.of<AppState>(context, listen: false);
-    // store.dispatch(UpdateDefaultTabAction(_activeBottomNavItemLabel));
-    setState(() {
-      _activeBottomNavItemLabel = _buildBottomNavBarItems()[index].label!;
-    });
-    // _refreshData();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      //   title: const Text('Super Gallery'),
-      // ),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('Super Gallery'),
+      ),
       body: Center(
         child: FolderList(directories: directories),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: _buildBottomNavBarItems(),
-        currentIndex: _getIndexOfActiveLabel(),
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Theme.of(context).colorScheme.onSurface,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        onTap: _onBottomNavItemTapped,
-      ),
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: _incrementCounter,
-      //   tooltip: 'Increment',
-      //   child: const Icon(Icons.add),
-      // ),
+      bottomNavigationBar: BottomNavigation(),
     );
   }
 }

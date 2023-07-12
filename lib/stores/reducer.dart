@@ -5,6 +5,8 @@ AppState updateReducer(AppState state, action) {
   switch (action.runtimeType) {
     case UpdateCurrentViewAction:
       return state.copyWith(view: action.view);
+    case UpdateMainViewCurrentTabAction:
+      return state.copyWith(tab: action.tab);
   }
   return state;
 }

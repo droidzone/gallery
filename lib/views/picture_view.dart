@@ -27,28 +27,54 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
   ValueNotifier<bool> isDragging = ValueNotifier(false);
 
   Future<void> saveImage() async {
-    RenderRepaintBoundary boundary =
-        stackKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+      RenderRepaintBoundary boundary =
+          stackKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 
-    // Create an image from the RenderRepaintBoundary
-    var image = await boundary.toImage(pixelRatio: 2.0);
+      // Create an image from the RenderRepaintBoundary
+      var image = await boundary.toImage(pixelRatio: 2.0);
 
-    // Convert the image to bytes
-    ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
-    Uint8List pngBytes = byteData!.buffer.asUint8List();
+      // Convert the image to bytes
+      ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-    // Save the image using ImageGallerySaver
-    final result = await ImageGallerySaver.saveImage(pngBytes);
-    print("File saved to gallery: $result");
-    Fluttertoast.showToast(
-        msg: "Image saved to gallery",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.grey,
-        textColor: Colors.white,
-        fontSize: 16.0);
+      // Save the image using ImageGallerySaver
+      final result = await ImageGallerySaver.saveImage(pngBytes);
+      print("File saved to gallery: $result");
+      Fluttertoast.showToast(
+          msg: "Image saved to gallery",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.grey,
+          textColor: Colors.white,
+          fontSize: 16.0);
+    });
   }
+
+  // Future<void> saveImage() async {
+  //   RenderRepaintBoundary boundary =
+  //       stackKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+  //   // Create an image from the RenderRepaintBoundary
+  //   var image = await boundary.toImage(pixelRatio: 2.0);
+
+  //   // Convert the image to bytes
+  //   ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+  //   Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+  //   // Save the image using ImageGallerySaver
+  //   final result = await ImageGallerySaver.saveImage(pngBytes);
+  //   print("File saved to gallery: $result");
+  //   Fluttertoast.showToast(
+  //       msg: "Image saved to gallery",
+  //       toastLength: Toast.LENGTH_SHORT,
+  //       gravity: ToastGravity.BOTTOM,
+  //       timeInSecForIosWeb: 1,
+  //       backgroundColor: Colors.grey,
+  //       textColor: Colors.white,
+  //       fontSize: 16.0);
+  // }
 
   Future<void> _addText() async {
     newText = await showDialog<String>(

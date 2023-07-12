@@ -1,21 +1,26 @@
 class AppState {
-  String? current_view;
-  String? mainview_defaulttab;
-  String? mainview_currenttab;
+  String? currentView;
+  String? mainviewDefaultTab;
+  String? mainviewCurrentTab;
+  String? viewFolderAs;
 
   AppState({
-    this.current_view,
-    this.mainview_defaulttab,
-    this.mainview_currenttab,
+    this.currentView,
+    this.mainviewDefaultTab,
+    this.mainviewCurrentTab,
+    this.viewFolderAs,
   });
 
   AppState copyWith({
     String? view,
     String? tab,
+    String? FolderViewType,
   }) {
     return AppState(
-      current_view: view ?? this.current_view,
-      mainview_currenttab: tab ?? this.mainview_currenttab,
+      currentView: view ?? currentView,
+      mainviewCurrentTab: tab ?? mainviewCurrentTab,
+      mainviewDefaultTab: tab ?? mainviewDefaultTab,
+      viewFolderAs: FolderViewType ?? viewFolderAs,
     );
   }
 }
