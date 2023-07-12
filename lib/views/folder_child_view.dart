@@ -2,12 +2,11 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
-import 'package:gallery/views/folder_view.dart';
 import 'package:gallery/views/picture_view.dart';
 import 'package:gallery/views/video_view.dart';
-import 'package:gallery/widgets/bottom_nav_bar.dart';
-import 'package:gallery/widgets/draggable_appbar.dart';
+
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 
@@ -20,10 +19,12 @@ import 'package:path/path.dart' as p;
 import 'package:redux/redux.dart';
 
 class FolderChildView extends StatefulWidget {
-  const FolderChildView({Key? key, required this.directoryBunch})
+  FolderChildView(
+      {Key? key, required this.directoryBunch, required this.windowIndex})
       : super(key: key);
 
   final DirectoryBunch directoryBunch;
+  int windowIndex;
 
   @override
   State<FolderChildView> createState() => _FolderChildViewState();
@@ -107,6 +108,7 @@ class _FolderChildViewState extends State<FolderChildView> {
     // ignore: use_build_context_synchronously
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       return FolderChildView(
+        windowIndex: widget.windowIndex,
         directoryBunch: DirectoryBunch(
           path: selectedFolder.path,
           name: dirName,
@@ -162,8 +164,8 @@ class _FolderChildViewState extends State<FolderChildView> {
   }
 
   String formatFileName(String fileName) {
-    if (fileName.length > 20) {
-      String first = fileName.substring(0, 15);
+    if (fileName.length > 15) {
+      String first = fileName.substring(0, 7);
       String last = fileName.substring(fileName.length - 8);
       return '$first..$last';
     }
@@ -185,6 +187,20 @@ class _FolderChildViewState extends State<FolderChildView> {
     DateTime modificationDate = _FilteredFiles[index].statSync().modified;
 
     String formattedDate = DateFormat('dd-MM-yyyy').format(modificationDate);
+    return formattedDate;
+  }
+
+  String _formattedDD(index) {
+    DateTime modificationDate = _FilteredFiles[index].statSync().modified;
+
+    String formattedDate = DateFormat('dd').format(modificationDate);
+    return formattedDate;
+  }
+
+  String _formattedMonth(index) {
+    DateTime modificationDate = _FilteredFiles[index].statSync().modified;
+
+    String formattedDate = DateFormat('MMMM').format(modificationDate);
     return formattedDate;
   }
 
@@ -228,107 +244,161 @@ class _FolderChildViewState extends State<FolderChildView> {
                         child: Text('No files found'),
                       ),
                     )
-                  : GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                      ),
-                      itemCount: _FilteredFiles.length,
-                      itemBuilder: (context, index) {
-                        if (_isMediaFile(_FilteredFiles[index].path)) {
-                          print("Media File found: ${_FilteredFiles[index]}");
+                  : InkWell(
+                      onTap: () {
+                        store.dispatch(
+                            UpdateSelectedChildWindow(widget.windowIndex));
+                      },
+                      child: Container(
+                        color: store.state.isSplit &&
+                                widget.windowIndex ==
+                                    store.state.selectedChildWindow
+                            ? Colors.blue[50]
+                            : Colors.white,
+                        child: GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                          ),
+                          itemCount: _FilteredFiles.length,
+                          itemBuilder: (context, index) {
+                            if (_isMediaFile(_FilteredFiles[index].path)) {
+                              print(
+                                  "Media File found: ${_FilteredFiles[index]}");
 
-                          String fileName =
-                              basename(_FilteredFiles[index].path);
-                          return InkWell(
-                            onLongPress: () {
-                              _longPressFile(index);
-                            },
-                            onTap: () {
-                              _singleTapFile(context, index);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(2.0),
-                              child: Container(
-                                color: _selectedFiles
-                                        .contains(_FilteredFiles[index])
-                                    ? Colors.green.withOpacity(0.3)
-                                    : null,
+                              String fileName =
+                                  basename(_FilteredFiles[index].path);
+                              return InkWell(
+                                onLongPress: () {
+                                  _longPressFile(index);
+                                },
+                                onTap: () {
+                                  _singleTapFile(context, index);
+                                },
+                                child: Container(
+                                  margin: EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: _selectedFiles
+                                            .contains(_FilteredFiles[index])
+                                        ? Colors.green.withOpacity(0.3)
+                                        : null,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          // Draw a border around each file
+                                          border: Border.all(
+                                            color: Colors.grey,
+                                            width: 1,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Expanded(
+                                          flex: 5,
+                                          child: Stack(
+                                            children: [
+                                              FutureBuilder(
+                                                future: _getThumbnail(
+                                                    _AllFiles[index].path),
+                                                builder: (BuildContext context,
+                                                    AsyncSnapshot<Uint8List>
+                                                        snapshot) {
+                                                  if (snapshot.connectionState ==
+                                                          ConnectionState
+                                                              .done &&
+                                                      snapshot.hasData) {
+                                                    return Image.memory(
+                                                      snapshot.data!,
+                                                      fit: BoxFit.contain,
+                                                      height: 100,
+                                                    );
+                                                  } else {
+                                                    return Text('Loading...');
+                                                  }
+                                                },
+                                              ),
+                                              Positioned(
+                                                bottom: 0,
+                                                left: 0,
+                                                child: CircleAvatar(
+                                                  backgroundColor: Colors.white,
+                                                  child: Column(
+                                                    children: [
+                                                      Text(
+                                                        _formattedDD(index),
+                                                        style: TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        _formattedMonth(index),
+                                                        style: TextStyle(
+                                                          color: Colors.black,
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Align(
+                                            alignment: Alignment.center,
+                                            child: Wrap(
+                                              children: [
+                                                Text(formatFileName(fileName))
+                                              ],
+                                            )),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            } else if (_FilteredFiles[index] is Directory &&
+                                store.state.mainviewCurrentTab == 'Folders') {
+                              print("Directory found: ${_AllFiles[index]}");
+                              print("currentview: ${store.state.currentView}");
+                              //  &&
+                              //   store.state.currentView == 'Folders'
+                              String dirName = basename(_AllFiles[index].path);
+                              return InkWell(
+                                onTap: () async {
+                                  loadFolder(context, _AllFiles[index]);
+                                },
                                 child: Column(
                                   children: <Widget>[
                                     Expanded(
-                                      child: Align(
-                                          alignment: Alignment.center,
-                                          child: Wrap(
-                                            children: [
-                                              Text(formatFileName(fileName))
-                                            ],
-                                          )),
-                                    ),
-                                    Expanded(
-                                      flex: 5,
-                                      child: FutureBuilder(
-                                        future: _getThumbnail(
-                                            _AllFiles[index].path),
-                                        builder: (BuildContext context,
-                                            AsyncSnapshot<Uint8List> snapshot) {
-                                          if (snapshot.connectionState ==
-                                                  ConnectionState.done &&
-                                              snapshot.hasData) {
-                                            return Image.memory(
-                                              snapshot.data!,
-                                              fit: BoxFit.contain,
-                                            );
-                                          } else {
-                                            return Text('Loading...');
-                                          }
-                                        },
+                                      flex: 2,
+                                      child: Icon(
+                                        Icons.folder,
+                                        size: 160,
+                                        color: Colors.blue,
                                       ),
                                     ),
                                     Expanded(
                                       child: Align(
                                           alignment: Alignment.center,
-                                          child: Text(_formattedDate(index))),
+                                          child: Text(dirName)),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                          );
-                        } else if (_FilteredFiles[index] is Directory &&
-                            store.state.mainviewCurrentTab == 'Folders') {
-                          print("Directory found: ${_AllFiles[index]}");
-                          print("currentview: ${store.state.currentView}");
-                          //  &&
-                          //   store.state.currentView == 'Folders'
-                          String dirName = basename(_AllFiles[index].path);
-                          return InkWell(
-                            onTap: () async {
-                              loadFolder(context, _AllFiles[index]);
-                            },
-                            child: Column(
-                              children: <Widget>[
-                                Expanded(
-                                  flex: 2,
-                                  child: Icon(
-                                    Icons.folder,
-                                    size: 160,
-                                    color: Colors.blue,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Align(
-                                      alignment: Alignment.center,
-                                      child: Text(dirName)),
-                                ),
-                              ],
-                            ),
-                          );
-                        } else {
-                          print(
-                              "Found non media file: ${_FilteredFiles[index]}, or view is set to Gallery and directories are being hidden. Not displaying");
-                          return Container();
-                        }
-                      },
+                              );
+                            } else {
+                              print(
+                                  "Found non media file: ${_FilteredFiles[index]}, or view is set to Gallery and directories are being hidden. Not displaying");
+                              return Container();
+                            }
+                          },
+                        ),
+                      ),
                     ),
             ),
           ],

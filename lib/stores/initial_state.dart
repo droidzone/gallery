@@ -4,4 +4,8 @@ AppState initialState = AppState(
   currentView: "Main",
   mainviewDefaultTab: "Folders",
   mainviewCurrentTab: "Folders",
+  isSplit: false,
+  selectedFiles: [],
+  filteredFiles: [],
+  selectedChildWindow: 0,
 );

@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:gallery/helpers/utils.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/views/picture_view.dart';
 import 'package:gallery/views/video_view.dart';
@@ -132,33 +133,6 @@ class _FolderViewState extends State<FolderView> {
     }
   }
 
-  void _sortByName(bool ascending) {
-    _FilteredFiles.sort((a, b) {
-      return ascending
-          ? basename(a.path).compareTo(basename(b.path))
-          : basename(b.path).compareTo(basename(a.path));
-    });
-    setState(() {});
-  }
-
-  void _sortByCreationDate(bool ascending) {
-    _FilteredFiles.sort((a, b) {
-      return ascending
-          ? a.statSync().changed.compareTo(b.statSync().changed)
-          : b.statSync().changed.compareTo(a.statSync().changed);
-    });
-    setState(() {});
-  }
-
-  void _sortByModificationDate(bool ascending) {
-    _FilteredFiles.sort((a, b) {
-      return ascending
-          ? a.statSync().modified.compareTo(b.statSync().modified)
-          : b.statSync().modified.compareTo(a.statSync().modified);
-    });
-    setState(() {});
-  }
-
   String formatFileName(String fileName) {
     if (fileName.length > 20) {
       String first = fileName.substring(0, 15);
@@ -223,7 +197,7 @@ class _FolderViewState extends State<FolderView> {
               appBar: AppBar(
                 title: Text('Gallery'),
                 actions: <Widget>[
-                  _selectedFiles.length > 0
+                  store.state.selectedFiles.length > 0
                       ? IconButton(
                           icon: Icon(Icons.copy),
                           onPressed: () {
@@ -237,22 +211,24 @@ class _FolderViewState extends State<FolderView> {
                     onSelected: (String result) {
                       switch (result) {
                         case 'Name Ascending':
-                          _sortByName(true);
+                          sortByName(true, store.state.filteredFiles);
                           break;
                         case 'Name Descending':
-                          _sortByName(false);
+                          sortByName(false, store.state.filteredFiles);
                           break;
                         case 'Creation Date Ascending':
-                          _sortByCreationDate(true);
+                          sortByCreationDate(true, store.state.filteredFiles);
                           break;
                         case 'Creation Date Descending':
-                          _sortByCreationDate(false);
+                          sortByCreationDate(false, store.state.filteredFiles);
                           break;
                         case 'Modification Date Ascending':
-                          _sortByModificationDate(true);
+                          sortByModificationDate(
+                              true, store.state.filteredFiles);
                           break;
                         case 'Modification Date Descending':
-                          _sortByModificationDate(false);
+                          sortByModificationDate(
+                              false, store.state.filteredFiles);
                           break;
                       }
                     },
