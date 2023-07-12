@@ -280,52 +280,55 @@ class _FolderViewState extends State<FolderView> {
                         }));
                       }
                     },
-                    child: Container(
-                      color: _selectedFiles.contains(_FilteredFiles[index])
-                          ? Colors.green.withOpacity(0.3)
-                          : null,
-                      // decoration: BoxDecoration(
-                      //   border: Border.all(
-                      //     color: _selectedFiles.contains(_FilteredFiles[index])
-                      //         ? Colors.blue
-                      //         : Colors.transparent,
-                      //     width: 3.0,
-                      //   ),
-                      // ),
-                      child: Column(
-                        children: <Widget>[
-                          Expanded(
-                            child: Align(
-                                alignment: Alignment.center,
-                                child: Wrap(
-                                  children: [Text(fileName)],
-                                )),
-                          ),
-                          Expanded(
-                            flex: 5,
-                            child: FutureBuilder(
-                              future: _getThumbnail(_AllFiles[index].path),
-                              builder: (BuildContext context,
-                                  AsyncSnapshot<Uint8List> snapshot) {
-                                if (snapshot.connectionState ==
-                                        ConnectionState.done &&
-                                    snapshot.hasData) {
-                                  return Image.memory(
-                                    snapshot.data!,
-                                    fit: BoxFit.contain,
-                                  );
-                                } else {
-                                  return CircularProgressIndicator();
-                                }
-                              },
+                    child: Padding(
+                      padding: const EdgeInsets.all(2.0),
+                      child: Container(
+                        color: _selectedFiles.contains(_FilteredFiles[index])
+                            ? Colors.green.withOpacity(0.3)
+                            : null,
+                        // decoration: BoxDecoration(
+                        //   border: Border.all(
+                        //     color: _selectedFiles.contains(_FilteredFiles[index])
+                        //         ? Colors.blue
+                        //         : Colors.transparent,
+                        //     width: 3.0,
+                        //   ),
+                        // ),
+                        child: Column(
+                          children: <Widget>[
+                            Expanded(
+                              child: Align(
+                                  alignment: Alignment.center,
+                                  child: Wrap(
+                                    children: [Text(fileName)],
+                                  )),
                             ),
-                          ),
-                          Expanded(
-                            child: Align(
-                                alignment: Alignment.center,
-                                child: Text('${formattedDate.toString()}')),
-                          ),
-                        ],
+                            Expanded(
+                              flex: 5,
+                              child: FutureBuilder(
+                                future: _getThumbnail(_AllFiles[index].path),
+                                builder: (BuildContext context,
+                                    AsyncSnapshot<Uint8List> snapshot) {
+                                  if (snapshot.connectionState ==
+                                          ConnectionState.done &&
+                                      snapshot.hasData) {
+                                    return Image.memory(
+                                      snapshot.data!,
+                                      fit: BoxFit.contain,
+                                    );
+                                  } else {
+                                    return Text('Loading...');
+                                  }
+                                },
+                              ),
+                            ),
+                            Expanded(
+                              child: Align(
+                                  alignment: Alignment.center,
+                                  child: Text('${formattedDate.toString()}')),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );
@@ -344,7 +347,7 @@ class _FolderViewState extends State<FolderView> {
                           flex: 2,
                           child: Icon(
                             Icons.folder,
-                            size: 100,
+                            size: 160,
                             color: Colors.blue,
                           ),
                         ),

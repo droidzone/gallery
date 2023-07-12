@@ -1,13 +1,27 @@
-
 import 'package:flutter/material.dart';
+import 'package:gallery/stores/app_state.dart';
+import 'package:gallery/stores/initial_state.dart';
+import 'package:gallery/stores/reducer.dart';
 import 'package:gallery/views/start_view.dart';
+import 'package:redux/redux.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final store = Store<AppState>(
+    updateReducer,
+    // middleware: [fetchAppointmentsMiddleware],
+    initialState: initialState,
+  );
+  runApp(MyApp(
+    store: store,
+  ));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Store<AppState> store;
+
+  MyApp({super.key, required this.store});
 
   // This widget is the root of your application.
   @override

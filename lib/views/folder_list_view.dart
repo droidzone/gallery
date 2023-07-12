@@ -1,7 +1,5 @@
 // ignore_for_file: prefer_const_constructors
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/views/folder_view.dart';
