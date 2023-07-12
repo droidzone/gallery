@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:gallery/stores/app_state.dart';
+import 'package:gallery/views/folder_view.dart';
 import 'package:gallery/views/picture_view.dart';
 import 'package:gallery/views/video_view.dart';
 import 'package:gallery/widgets/bottom_nav_bar.dart';
@@ -18,16 +19,17 @@ import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path/path.dart' as p;
 import 'package:redux/redux.dart';
 
-class FolderView extends StatefulWidget {
-  const FolderView({Key? key, required this.directoryBunch}) : super(key: key);
+class FolderChildView extends StatefulWidget {
+  const FolderChildView({Key? key, required this.directoryBunch})
+      : super(key: key);
 
   final DirectoryBunch directoryBunch;
 
   @override
-  State<FolderView> createState() => _FolderViewState();
+  State<FolderChildView> createState() => _FolderChildViewState();
 }
 
-class _FolderViewState extends State<FolderView> {
+class _FolderChildViewState extends State<FolderChildView> {
   List<FileSystemEntity> _AllFiles = [];
   List<FileSystemEntity> _FilteredFiles = [];
   List<File> _selectedFiles = [];
@@ -104,7 +106,7 @@ class _FolderViewState extends State<FolderView> {
 
     // ignore: use_build_context_synchronously
     Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return FolderView(
+      return FolderChildView(
         directoryBunch: DirectoryBunch(
           path: selectedFolder.path,
           name: dirName,
@@ -220,73 +222,6 @@ class _FolderViewState extends State<FolderView> {
         return Stack(
           children: [
             Scaffold(
-              appBar: AppBar(
-                title: Text('Gallery'),
-                actions: <Widget>[
-                  _selectedFiles.length > 0
-                      ? IconButton(
-                          icon: Icon(Icons.copy),
-                          onPressed: () {
-                            print("Copy button pressed");
-                          },
-                        )
-                      : Container(),
-                  // Add a button for Sort
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.sort), // Use an icon button
-                    onSelected: (String result) {
-                      switch (result) {
-                        case 'Name Ascending':
-                          _sortByName(true);
-                          break;
-                        case 'Name Descending':
-                          _sortByName(false);
-                          break;
-                        case 'Creation Date Ascending':
-                          _sortByCreationDate(true);
-                          break;
-                        case 'Creation Date Descending':
-                          _sortByCreationDate(false);
-                          break;
-                        case 'Modification Date Ascending':
-                          _sortByModificationDate(true);
-                          break;
-                        case 'Modification Date Descending':
-                          _sortByModificationDate(false);
-                          break;
-                      }
-                    },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'Name Ascending',
-                        child: Text('Name Ascending'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Name Descending',
-                        child: Text('Name Descending'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Creation Date Ascending',
-                        child: Text('Creation Date Ascending'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Creation Date Descending',
-                        child: Text('Creation Date Descending'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Modification Date Ascending',
-                        child: Text('Modification Date Ascending'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'Modification Date Descending',
-                        child: Text('Modification Date Descending'),
-                      ),
-                    ],
-                  ),
-                  // Add a normal action button for Copy
-                ],
-              ),
               body: _FilteredFiles.length == 0
                   ? Container(
                       child: Center(
@@ -395,7 +330,6 @@ class _FolderViewState extends State<FolderView> {
                         }
                       },
                     ),
-              bottomNavigationBar: BottomNavigation(),
             ),
           ],
         );

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/views/folder_view.dart';
+import 'package:gallery/views/superfolder_view.dart';
 
 class FolderList extends StatelessWidget {
   FolderList({super.key, required this.directories});
@@ -18,7 +19,7 @@ class FolderList extends StatelessWidget {
         return ListTile(
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return FolderView(
+              return SuperFolderView(
                 directoryBunch: directories[index],
               );
             }));

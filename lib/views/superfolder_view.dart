@@ -1,0 +1,154 @@
+// ignore_for_file: prefer_const_constructors
+
+import 'package:flutter/material.dart';
+import 'package:gallery/structure/directory_bunch.dart';
+import 'package:gallery/views/folder_child_view.dart';
+import 'package:gallery/views/folder_view.dart';
+import 'package:gallery/widgets/bottom_nav_bar.dart';
+
+class SuperFolderView extends StatefulWidget {
+  const SuperFolderView({Key? key, required this.directoryBunch})
+      : super(key: key);
+
+  final DirectoryBunch directoryBunch;
+
+  @override
+  State<SuperFolderView> createState() => _SuperFolderViewState();
+}
+
+class _SuperFolderViewState extends State<SuperFolderView> {
+  late double _top;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      _top = MediaQuery.of(context).size.height / 2;
+      setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Gallery'),
+        // actions: <Widget>[
+        //   _selectedFiles.length > 0
+        //       ? IconButton(
+        //           icon: Icon(Icons.copy),
+        //           onPressed: () {
+        //             print("Copy button pressed");
+        //           },
+        //         )
+        //       : Container(),
+        //   // Add a button for Sort
+        //   PopupMenuButton<String>(
+        //     icon: Icon(Icons.sort), // Use an icon button
+        //     onSelected: (String result) {
+        //       switch (result) {
+        //         case 'Name Ascending':
+        //           _sortByName(true);
+        //           break;
+        //         case 'Name Descending':
+        //           _sortByName(false);
+        //           break;
+        //         case 'Creation Date Ascending':
+        //           _sortByCreationDate(true);
+        //           break;
+        //         case 'Creation Date Descending':
+        //           _sortByCreationDate(false);
+        //           break;
+        //         case 'Modification Date Ascending':
+        //           _sortByModificationDate(true);
+        //           break;
+        //         case 'Modification Date Descending':
+        //           _sortByModificationDate(false);
+        //           break;
+        //       }
+        //     },
+        //     itemBuilder: (BuildContext context) =>
+        //         <PopupMenuEntry<String>>[
+        //       const PopupMenuItem<String>(
+        //         value: 'Name Ascending',
+        //         child: Text('Name Ascending'),
+        //       ),
+        //       const PopupMenuItem<String>(
+        //         value: 'Name Descending',
+        //         child: Text('Name Descending'),
+        //       ),
+        //       const PopupMenuItem<String>(
+        //         value: 'Creation Date Ascending',
+        //         child: Text('Creation Date Ascending'),
+        //       ),
+        //       const PopupMenuItem<String>(
+        //         value: 'Creation Date Descending',
+        //         child: Text('Creation Date Descending'),
+        //       ),
+        //       const PopupMenuItem<String>(
+        //         value: 'Modification Date Ascending',
+        //         child: Text('Modification Date Ascending'),
+        //       ),
+        //       const PopupMenuItem<String>(
+        //         value: 'Modification Date Descending',
+        //         child: Text('Modification Date Descending'),
+        //       ),
+        //     ],
+        //   ),
+        // Add a normal action button for Copy
+        // ],
+      ),
+      body: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final totalHeight = constraints.maxHeight;
+          final topChildHeight = _top;
+          final bottomChildHeight = totalHeight -
+              _top -
+              20; // Subtracting the height of the draggable bar
+
+          return Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: topChildHeight,
+                child: FolderChildView(directoryBunch: widget.directoryBunch),
+              ),
+              Positioned(
+                top: _top + 20, // Adding the height of the draggable bar
+                left: 0,
+                right: 0,
+                height: bottomChildHeight,
+                child: FolderChildView(directoryBunch: widget.directoryBunch),
+              ),
+              Positioned(
+                top: _top,
+                left: 0,
+                right: 0,
+                child: GestureDetector(
+                  onVerticalDragUpdate: (DragUpdateDetails details) {
+                    setState(() {
+                      _top += details.delta.dy;
+                    });
+                  },
+                  child: Container(
+                    color: Colors.blue,
+                    height: 20, // Standard AppBar height
+                    child: Center(
+                      child: Icon(
+                        Icons.drag_handle,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+      bottomNavigationBar: BottomNavigation(),
+    );
+  }
+}
