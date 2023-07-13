@@ -176,12 +176,13 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                                 });
                               },
                               child: Container(
-                                color: Colors.blue,
-                                height: 20, // Standard AppBar height
+                                color: Colors.grey[400],
+                                height: 12, // Standard AppBar height
                                 child: Center(
                                   child: Icon(
                                     Icons.drag_handle,
                                     color: Colors.white,
+                                    size: 8,
                                   ),
                                 ),
                               ),
