@@ -22,7 +22,7 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   final Store<AppState> store;
 
-  MyApp({super.key, required this.store});
+  const MyApp({super.key, required this.store});
 
   // This widget is the root of your application.
   @override

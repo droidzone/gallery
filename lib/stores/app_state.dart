@@ -9,6 +9,7 @@ class AppState {
   List<File>? selectedFiles;
   List<File>? filteredFiles;
   int? selectedChildWindow;
+  String? selectedPath;
 
   AppState({
     this.currentView,
@@ -19,6 +20,7 @@ class AppState {
     this.selectedFiles,
     this.filteredFiles,
     this.selectedChildWindow,
+    this.selectedPath,
   });
 
   AppState copyWith({
@@ -29,6 +31,7 @@ class AppState {
     List<File>? selected,
     List<File>? filtered,
     int? childWindowSelected,
+    String? pathSelected,
   }) {
     return AppState(
       currentView: view ?? currentView,
@@ -39,6 +42,7 @@ class AppState {
       selectedFiles: selected ?? selectedFiles,
       filteredFiles: filtered ?? filteredFiles,
       selectedChildWindow: childWindowSelected ?? selectedChildWindow,
+      selectedPath: pathSelected ?? selectedPath,
     );
   }
 }

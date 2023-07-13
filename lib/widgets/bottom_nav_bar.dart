@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';

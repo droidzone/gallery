@@ -33,7 +33,7 @@ class FolderChildView extends StatefulWidget {
 class _FolderChildViewState extends State<FolderChildView> {
   List<FileSystemEntity> _AllFiles = [];
   List<FileSystemEntity> _FilteredFiles = [];
-  List<File> _selectedFiles = [];
+  final List<File> _selectedFiles = [];
   late Store<AppState> store;
 
   @override
@@ -78,11 +78,11 @@ class _FolderChildViewState extends State<FolderChildView> {
     print("Directory: ${widget.directoryBunch.path}");
     List<FileSystemEntity> files = [];
     final Directory directory = Directory(widget.directoryBunch.path);
-    List<FileSystemEntity> _tmpFiles = directory.listSync();
+    List<FileSystemEntity> tmpFiles = directory.listSync();
     // _files = directory.listSync();
-    print("Files: $_tmpFiles");
+    print("Files: $tmpFiles");
 
-    for (var file in _tmpFiles) {
+    for (var file in tmpFiles) {
       if (file is File) {
         print("$file is a file");
       } else {

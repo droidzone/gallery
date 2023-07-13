@@ -16,7 +16,7 @@ import 'dart:ui' as ui;
 class FullScreenVideoView extends StatefulWidget {
   final String videoPath;
 
-  FullScreenVideoView({required this.videoPath});
+  const FullScreenVideoView({super.key, required this.videoPath});
 
   @override
   _FullScreenVideoViewState createState() => _FullScreenVideoViewState();
@@ -76,7 +76,7 @@ class _FullScreenVideoViewState extends State<FullScreenVideoView> {
     Uint8List pngBytes = byteData!.buffer.asUint8List();
 
     final tempDir = await getTemporaryDirectory();
-    final file = await new File('${tempDir.path}/image.png').create();
+    final file = await File('${tempDir.path}/image.png').create();
     await file.writeAsBytes(pngBytes);
 
     // await Share.shareFiles([file.path], text: 'Screenshot');
@@ -186,7 +186,7 @@ class _FullScreenVideoViewState extends State<FullScreenVideoView> {
                                     DateFormat('dd, MMMM yyyy h:mm a')
                                         .format(snapshot.data!);
                                 return Text(
-                                  "Modified: ${formattedDate}",
+                                  "Modified: $formattedDate",
                                   style: TextStyle(
                                     fontSize: 18,
                                     color: Colors.white,

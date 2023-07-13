@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class DraggableAppBar extends StatefulWidget {
+  const DraggableAppBar({super.key});
+
   @override
   _DraggableAppBarState createState() => _DraggableAppBarState();
 }
@@ -23,7 +25,7 @@ class _DraggableAppBarState extends State<DraggableAppBar> {
         child: Container(
           color: Colors.blue,
           height: 56, // Standard AppBar height
-          child: Center(
+          child: const Center(
             child: Text('Draggable AppBar',
                 style: TextStyle(color: Colors.white, fontSize: 20)),
           ),

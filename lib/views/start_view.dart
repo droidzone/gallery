@@ -1,15 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_redux/flutter_redux.dart';
-import 'package:gallery/stores/actions.dart';
-import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/views/folder_list_view.dart';
 import 'package:gallery/widgets/bottom_nav_bar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:redux/redux.dart';
 
 class StartView extends StatefulWidget {
   const StartView({super.key});
@@ -58,11 +54,12 @@ class _StartViewState extends State<StartView> {
         'Pictures',
         'Movies',
         'Music',
-        'Downloads'
+        'Download'
       ];
 
       await requestPermission(Permission.photos);
       await requestPermission(Permission.videos);
+      await requestPermission(Permission.storage);
       for (String directory in mediaDirectories) {
         String path = "${dir.path.split("Android")[0]}$directory";
         try {
@@ -118,7 +115,7 @@ class _StartViewState extends State<StartView> {
       body: Center(
         child: FolderList(directories: directories),
       ),
-      bottomNavigationBar: BottomNavigation(),
+      bottomNavigationBar: const BottomNavigation(),
     );
   }
 }

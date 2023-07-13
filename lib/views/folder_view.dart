@@ -7,7 +7,6 @@ import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/views/picture_view.dart';
 import 'package:gallery/views/video_view.dart';
 import 'package:gallery/widgets/bottom_nav_bar.dart';
-import 'package:gallery/widgets/draggable_appbar.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 
@@ -31,7 +30,7 @@ class FolderView extends StatefulWidget {
 class _FolderViewState extends State<FolderView> {
   List<FileSystemEntity> _AllFiles = [];
   List<FileSystemEntity> _FilteredFiles = [];
-  List<File> _selectedFiles = [];
+  final List<File> _selectedFiles = [];
 
   @override
   void initState() {
@@ -69,11 +68,11 @@ class _FolderViewState extends State<FolderView> {
     print("Directory: ${widget.directoryBunch.path}");
     List<FileSystemEntity> files = [];
     final Directory directory = Directory(widget.directoryBunch.path);
-    List<FileSystemEntity> _tmpFiles = directory.listSync();
+    List<FileSystemEntity> tmpFiles = directory.listSync();
     // _files = directory.listSync();
-    print("Files: $_tmpFiles");
+    print("Files: $tmpFiles");
 
-    for (var file in _tmpFiles) {
+    for (var file in tmpFiles) {
       if (file is File) {
         print("$file is a file");
       } else {
@@ -263,7 +262,7 @@ class _FolderViewState extends State<FolderView> {
                   // Add a normal action button for Copy
                 ],
               ),
-              body: _FilteredFiles.length == 0
+              body: _FilteredFiles.isEmpty
                   ? Container(
                       child: Center(
                         child: Text('No files found'),

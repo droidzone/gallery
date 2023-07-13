@@ -13,7 +13,7 @@ import 'package:photo_view/photo_view.dart';
 class FullScreenImageView extends StatefulWidget {
   final String imagePath;
 
-  FullScreenImageView({required this.imagePath});
+  FullScreenImageView({super.key, required this.imagePath});
 
   @override
   State<FullScreenImageView> createState() => _FullScreenImageViewState();
@@ -27,7 +27,7 @@ class _FullScreenImageViewState extends State<FullScreenImageView> {
   ValueNotifier<bool> isDragging = ValueNotifier(false);
 
   Future<void> saveImage() async {
-    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       RenderRepaintBoundary boundary =
           stackKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 

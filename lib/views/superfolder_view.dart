@@ -7,7 +7,6 @@ import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/views/folder_child_view.dart';
-import 'package:gallery/views/folder_view.dart';
 import 'package:gallery/widgets/bottom_nav_bar.dart';
 import 'package:redux/redux.dart';
 
@@ -22,12 +21,12 @@ class SuperFolderView extends StatefulWidget {
 }
 
 class _SuperFolderViewState extends State<SuperFolderView> {
-  late double _top;
+  late double _top = 0.0;
   late Store<AppState> store;
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _top = MediaQuery.of(context).size.height / 2;
       setState(() {});
     });
@@ -37,6 +36,11 @@ class _SuperFolderViewState extends State<SuperFolderView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     store = StoreProvider.of<AppState>(context, listen: false);
+  }
+
+  void pasteFiles() {
+    print("Paste files");
+    print("Files in memory include: ${store.state.selectedFiles}");
   }
 
   @override
@@ -65,15 +69,33 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                 ),
                 store.state.selectedFiles.isNotEmpty
                     ? IconButton(
-                        icon: Icon(Icons.copy),
+                        icon: Icon(
+                          Icons.copy,
+                          color: Colors.blue,
+                        ),
                         onPressed: () {
                           print("Copy button pressed");
                         },
                       )
                     : Container(),
+                store.state.selectedFiles.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.paste,
+                          color: Colors.blue,
+                        ),
+                        onPressed: () {
+                          print("Paste button pressed");
+                          pasteFiles();
+                        },
+                      )
+                    : Container(),
                 // Add a button for Sort
                 PopupMenuButton<String>(
-                  icon: Icon(Icons.sort), // Use an icon button
+                  icon: Icon(
+                    Icons.sort,
+                    color: Colors.blue,
+                  ), // Use an icon button
                   onSelected: (String result) {
                     switch (result) {
                       case 'Name Ascending':
