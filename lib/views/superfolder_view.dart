@@ -23,7 +23,7 @@ class SuperFolderView extends StatefulWidget {
 
 class _SuperFolderViewState extends State<SuperFolderView> {
   late double _top;
-
+  late Store<AppState> store;
   @override
   void initState() {
     super.initState();
@@ -31,6 +31,12 @@ class _SuperFolderViewState extends State<SuperFolderView> {
       _top = MediaQuery.of(context).size.height / 2;
       setState(() {});
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    store = StoreProvider.of<AppState>(context, listen: false);
   }
 
   @override
@@ -57,7 +63,7 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                   color:
                       store.state.isSplit == true ? Colors.blue : Colors.black,
                 ),
-                store.state.selectedFiles.length > 0
+                store.state.selectedFiles.isNotEmpty
                     ? IconButton(
                         icon: Icon(Icons.copy),
                         onPressed: () {
@@ -124,6 +130,7 @@ class _SuperFolderViewState extends State<SuperFolderView> {
             ),
             body: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
+                // _top = MediaQuery.of(context).size.height / 2;
                 final totalHeight = constraints.maxHeight;
                 final topChildHeight = _top;
                 final bottomChildHeight = totalHeight -
@@ -162,6 +169,8 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                             child: GestureDetector(
                               onVerticalDragUpdate:
                                   (DragUpdateDetails details) {
+                                print(
+                                    "Drag update details: ${details.delta.dy}");
                                 setState(() {
                                   _top += details.delta.dy;
                                 });

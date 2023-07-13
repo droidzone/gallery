@@ -8,15 +8,15 @@ import 'package:gallery/views/picture_view.dart';
 import 'package:gallery/views/video_view.dart';
 
 import 'package:intl/intl.dart';
-import 'package:path/path.dart';
 
 import 'dart:io';
-import 'package:flutter/material.dart';
+
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path/path.dart' as p;
 import 'package:redux/redux.dart';
+import 'package:flutter/material.dart';
 
 class FolderChildView extends StatefulWidget {
   FolderChildView(
@@ -34,11 +34,18 @@ class _FolderChildViewState extends State<FolderChildView> {
   List<FileSystemEntity> _AllFiles = [];
   List<FileSystemEntity> _FilteredFiles = [];
   List<File> _selectedFiles = [];
+  late Store<AppState> store;
 
   @override
   void initState() {
     super.initState();
     _buildFileFilter();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    store = StoreProvider.of<AppState>(context, listen: false);
   }
 
   Future requestPermission(Permission permission) async {
@@ -103,7 +110,7 @@ class _FolderChildViewState extends State<FolderChildView> {
     //     await Directory(selectedFolder.path).list().toList();
     // print("Files: $files No: ${files.length}");
 
-    String dirName = basename(selectedFolder.path);
+    String dirName = p.basename(selectedFolder.path);
 
     // ignore: use_build_context_synchronously
     Navigator.push(context, MaterialPageRoute(builder: (context) {
@@ -139,8 +146,8 @@ class _FolderChildViewState extends State<FolderChildView> {
   void _sortByName(bool ascending) {
     _FilteredFiles.sort((a, b) {
       return ascending
-          ? basename(a.path).compareTo(basename(b.path))
-          : basename(b.path).compareTo(basename(a.path));
+          ? p.basename(a.path).compareTo(p.basename(b.path))
+          : p.basename(b.path).compareTo(p.basename(a.path));
     });
     setState(() {});
   }
@@ -174,11 +181,13 @@ class _FolderChildViewState extends State<FolderChildView> {
 
   void _longPressFile(index) {
     print("Long pressed file");
+    print("Pressed file is ${_FilteredFiles[index]} index is $index");
+    print("store is $store");
     setState(() {
-      if (_selectedFiles.contains(_FilteredFiles[index])) {
-        _selectedFiles.remove(_FilteredFiles[index] as File);
+      if (store.state.selectedFiles!.contains(_FilteredFiles[index])) {
+        store.state.selectedFiles!.remove(_FilteredFiles[index] as File);
       } else {
-        _selectedFiles.add(_FilteredFiles[index] as File);
+        store.state.selectedFiles!.add(_FilteredFiles[index] as File);
       }
     });
   }
@@ -206,12 +215,12 @@ class _FolderChildViewState extends State<FolderChildView> {
 
   void _singleTapFile(context, index) {
     print("Tapped file");
-    if (_selectedFiles.isNotEmpty) {
+    if (store.state.selectedFiles!.isNotEmpty) {
       setState(() {
-        if (_selectedFiles.contains(_FilteredFiles[index])) {
-          _selectedFiles.remove(_FilteredFiles[index] as File);
+        if (store.state.selectedFiles!.contains(_FilteredFiles[index])) {
+          store.state.selectedFiles!.remove(_FilteredFiles[index] as File);
         } else {
-          _selectedFiles.add(_FilteredFiles[index] as File);
+          store.state.selectedFiles!.add(_FilteredFiles[index] as File);
         }
       });
     } else {
@@ -238,11 +247,9 @@ class _FolderChildViewState extends State<FolderChildView> {
         return Stack(
           children: [
             Scaffold(
-              body: _FilteredFiles.length == 0
-                  ? Container(
-                      child: Center(
-                        child: Text('No files found'),
-                      ),
+              body: _FilteredFiles.isEmpty
+                  ? Center(
+                      child: Text('No files found'),
                     )
                   : InkWell(
                       onTap: () {
@@ -267,7 +274,7 @@ class _FolderChildViewState extends State<FolderChildView> {
                                   "Media File found: ${_FilteredFiles[index]}");
 
                               String fileName =
-                                  basename(_FilteredFiles[index].path);
+                                  p.basename(_FilteredFiles[index].path);
                               return InkWell(
                                 onLongPress: () {
                                   _longPressFile(index);
@@ -279,25 +286,25 @@ class _FolderChildViewState extends State<FolderChildView> {
                                   margin: EdgeInsets.all(3),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(10),
-                                    color: _selectedFiles
+                                    color: store.state.selectedFiles!
                                             .contains(_FilteredFiles[index])
                                         ? Colors.green.withOpacity(0.3)
                                         : null,
                                   ),
                                   child: Column(
                                     children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          // Draw a border around each file
-                                          border: Border.all(
-                                            color: Colors.grey,
-                                            width: 1,
+                                      Expanded(
+                                        flex: 5,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            // Draw a border around each file
+                                            border: Border.all(
+                                              color: Colors.grey,
+                                              width: 1,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
                                           ),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: Expanded(
-                                          flex: 5,
                                           child: Stack(
                                             children: [
                                               FutureBuilder(
@@ -368,7 +375,8 @@ class _FolderChildViewState extends State<FolderChildView> {
                               print("currentview: ${store.state.currentView}");
                               //  &&
                               //   store.state.currentView == 'Folders'
-                              String dirName = basename(_AllFiles[index].path);
+                              String dirName =
+                                  p.basename(_AllFiles[index].path);
                               return InkWell(
                                 onTap: () async {
                                   loadFolder(context, _AllFiles[index]);
