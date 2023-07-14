@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:gallery/helpers/utils.dart';
@@ -22,6 +24,8 @@ class SuperFolderView extends StatefulWidget {
 
 class _SuperFolderViewState extends State<SuperFolderView> {
   late double _top = 0.0;
+  final double _draggableBarHeight = 20;
+  final double _topInfoBarHeight = 20;
   late Store<AppState> store;
   @override
   void initState() {
@@ -40,6 +44,7 @@ class _SuperFolderViewState extends State<SuperFolderView> {
 
   void pasteFiles() {
     print("Paste files");
+    // print("Received files from child: $_selected");
     print("Files in memory include: ${store.state.selectedFiles}");
   }
 
@@ -86,7 +91,7 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                         ),
                         onPressed: () {
                           print("Paste button pressed");
-                          pasteFiles();
+                          // pasteFiles();
                         },
                       )
                     : Container(),
@@ -154,10 +159,10 @@ class _SuperFolderViewState extends State<SuperFolderView> {
               builder: (BuildContext context, BoxConstraints constraints) {
                 // _top = MediaQuery.of(context).size.height / 2;
                 final totalHeight = constraints.maxHeight;
-                final topChildHeight = _top;
+                final topChildHeight =
+                    (totalHeight - _draggableBarHeight - _topInfoBarHeight) / 2;
                 final bottomChildHeight = totalHeight -
-                    _top -
-                    20; // Subtracting the height of the draggable bar
+                    topChildHeight; // Subtracting the height of the draggable bar
 
                 return Stack(
                   children: [
@@ -165,16 +170,33 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                       top: 0,
                       left: 0,
                       right: 0,
+                      child: Container(
+                        color: Colors.grey[400],
+                        height: _topInfoBarHeight, // Standard AppBar height
+                        child: Center(
+                          child: Icon(
+                            Icons.drag_handle,
+                            color: Colors.white,
+                            size: 8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: _topInfoBarHeight,
+                      left: 0,
+                      right: 0,
                       height:
                           store.state.isSplit ? topChildHeight : totalHeight,
                       child: FolderChildView(
-                          windowIndex: 0,
-                          directoryBunch: widget.directoryBunch),
+                        windowIndex: 0,
+                        directoryBunch: widget.directoryBunch,
+                      ),
                     ),
                     store.state.isSplit
                         ? Positioned(
                             top: _top +
-                                20, // Adding the height of the draggable bar
+                                _draggableBarHeight, // Adding the height of the draggable bar
                             left: 0,
                             right: 0,
                             height: bottomChildHeight,
@@ -199,7 +221,8 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                               },
                               child: Container(
                                 color: Colors.grey[400],
-                                height: 12, // Standard AppBar height
+                                height:
+                                    _draggableBarHeight, // Standard AppBar height
                                 child: Center(
                                   child: Icon(
                                     Icons.drag_handle,

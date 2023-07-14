@@ -9,7 +9,7 @@ AppState updateReducer(AppState state, action) {
       return state.copyWith(tab: action.tab);
     case UpdateScreenSplitAction:
       return state.copyWith(split: action.isSplit);
-    case UpdateSelectedChildWindow:
+    case UpdateActiveChildWindow:
       return state.copyWith(childWindowSelected: action.childWindowSelected);
   }
   return state;

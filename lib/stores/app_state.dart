@@ -8,7 +8,7 @@ class AppState {
   bool? isSplit;
   List<File>? selectedFiles;
   List<File>? filteredFiles;
-  int? selectedChildWindow;
+  int? activeChildWindow;
   String? selectedPath;
 
   AppState({
@@ -19,7 +19,7 @@ class AppState {
     this.isSplit,
     this.selectedFiles,
     this.filteredFiles,
-    this.selectedChildWindow,
+    this.activeChildWindow,
     this.selectedPath,
   });
 
@@ -41,7 +41,7 @@ class AppState {
       isSplit: split ?? isSplit,
       selectedFiles: selected ?? selectedFiles,
       filteredFiles: filtered ?? filteredFiles,
-      selectedChildWindow: childWindowSelected ?? selectedChildWindow,
+      activeChildWindow: childWindowSelected ?? activeChildWindow,
       selectedPath: pathSelected ?? selectedPath,
     );
   }

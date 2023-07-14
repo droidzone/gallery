@@ -7,5 +7,5 @@ AppState initialState = AppState(
   isSplit: false,
   selectedFiles: [],
   filteredFiles: [],
-  selectedChildWindow: 0,
+  activeChildWindow: 0,
 );

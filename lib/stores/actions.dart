@@ -13,7 +13,7 @@ class UpdateScreenSplitAction {
   UpdateScreenSplitAction(this.isSplit);
 }
 
-class UpdateSelectedChildWindow {
+class UpdateActiveChildWindow {
   final int childWindowSelected;
-  UpdateSelectedChildWindow(this.childWindowSelected);
+  UpdateActiveChildWindow(this.childWindowSelected);
 }

@@ -19,11 +19,15 @@ import 'package:redux/redux.dart';
 import 'package:flutter/material.dart';
 
 class FolderChildView extends StatefulWidget {
-  FolderChildView(
-      {Key? key, required this.directoryBunch, required this.windowIndex})
-      : super(key: key);
+  FolderChildView({
+    Key? key,
+    required this.directoryBunch,
+    required this.windowIndex,
+    // required this.onPaste,
+  }) : super(key: key);
 
   final DirectoryBunch directoryBunch;
+  // final Function onPaste;
   int windowIndex;
 
   @override
@@ -35,10 +39,12 @@ class _FolderChildViewState extends State<FolderChildView> {
   List<FileSystemEntity> _FilteredFiles = [];
   final List<File> _selectedFiles = [];
   late Store<AppState> store;
+  DirectoryBunch? directoryBunch;
 
   @override
   void initState() {
     super.initState();
+    directoryBunch = widget.directoryBunch;
     _buildFileFilter();
   }
 
@@ -75,9 +81,9 @@ class _FolderChildViewState extends State<FolderChildView> {
 
   void _buildFileFilter() {
     print("Building file filter...");
-    print("Directory: ${widget.directoryBunch.path}");
+    print("Directory: ${directoryBunch!.path}");
     List<FileSystemEntity> files = [];
-    final Directory directory = Directory(widget.directoryBunch.path);
+    final Directory directory = Directory(directoryBunch!.path);
     List<FileSystemEntity> tmpFiles = directory.listSync();
     // _files = directory.listSync();
     print("Files: $tmpFiles");
@@ -103,7 +109,7 @@ class _FolderChildViewState extends State<FolderChildView> {
   }
 
   Future<void> loadFolder(BuildContext context, selectedFolder) async {
-    print("Loading folder...");
+    print("Loading folder: $selectedFolder");
 
     // This line brings prewiew image of the folder, but is performance heavy
     // List<FileSystemEntity> files =
@@ -112,18 +118,33 @@ class _FolderChildViewState extends State<FolderChildView> {
 
     String dirName = p.basename(selectedFolder.path);
 
-    // ignore: use_build_context_synchronously
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return FolderChildView(
-        windowIndex: widget.windowIndex,
-        directoryBunch: DirectoryBunch(
+    // if is split, refresh the dir location without navigating to it
+    if (store.state.isSplit!) {
+      print("We are in a split view");
+      setState(() {
+        directoryBunch = DirectoryBunch(
           path: selectedFolder.path,
           name: dirName,
           imgPath: null,
           // imgPath: files.isEmpty ? null : files[0].path,
-        ),
-      );
-    }));
+        );
+      });
+      _buildFileFilter();
+    } else {
+      print("This is not a split view");
+      // ignore: use_build_context_synchronously
+      Navigator.push(context, MaterialPageRoute(builder: (context) {
+        return FolderChildView(
+          windowIndex: widget.windowIndex,
+          directoryBunch: DirectoryBunch(
+            path: selectedFolder.path,
+            name: dirName,
+            imgPath: null,
+            // imgPath: files.isEmpty ? null : files[0].path,
+          ),
+        );
+      }));
+    }
   }
 
   Future<Uint8List> _getThumbnail(String path) async {
@@ -254,12 +275,12 @@ class _FolderChildViewState extends State<FolderChildView> {
                   : InkWell(
                       onTap: () {
                         store.dispatch(
-                            UpdateSelectedChildWindow(widget.windowIndex));
+                            UpdateActiveChildWindow(widget.windowIndex));
                       },
                       child: Container(
                         color: store.state.isSplit &&
                                 widget.windowIndex ==
-                                    store.state.selectedChildWindow
+                                    store.state.activeChildWindow
                             ? Colors.blue[50]
                             : Colors.white,
                         child: GridView.builder(
