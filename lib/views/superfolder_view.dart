@@ -24,15 +24,15 @@ class SuperFolderView extends StatefulWidget {
 
 class _SuperFolderViewState extends State<SuperFolderView> {
   late double _top = 0.0;
-  final double _draggableBarHeight = 20;
-  final double _topInfoBarHeight = 20;
+  double _draggableBarHeight = 20;
+  double _topInfoBarHeight = 20;
   late Store<AppState> store;
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _top = MediaQuery.of(context).size.height / 2;
-      setState(() {});
+      // setState(() {});
     });
   }
 

@@ -5,7 +5,14 @@ import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/views/superfolder_view.dart';
 
 class FolderList extends StatelessWidget {
-  FolderList({super.key, required this.directories});
+  FolderList({
+    super.key,
+    required this.directories,
+    required this.onClick,
+  });
+
+  Function onClick;
+
   List<DirectoryBunch> directories;
   @override
   Widget build(BuildContext context) {
@@ -17,11 +24,12 @@ class FolderList extends StatelessWidget {
       itemBuilder: (context, index) {
         return ListTile(
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) {
-              return SuperFolderView(
-                directoryBunch: directories[index],
-              );
-            }));
+            onClick(directories[index]);
+            // Navigator.push(context, MaterialPageRoute(builder: (context) {
+            //   return SuperFolderView(
+            //     directoryBunch: directories[index],
+            //   );
+            // }));
           },
           title: Column(
             children: [

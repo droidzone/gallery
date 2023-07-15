@@ -8,14 +8,16 @@ import 'package:gallery/helpers/utils.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
+import 'package:gallery/views/folder_child_view.dart';
 import 'package:gallery/views/folder_list_view.dart';
 import 'package:gallery/widgets/bottom_nav_bar.dart';
+import 'package:gallery/widgets/info_bar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:redux/redux.dart';
 
 class StartView extends StatefulWidget {
-  StartView({super.key});
+  StartView({Key? key}) : super(key: key);
   final List<Permission> requiredPermissions = [
     Permission.photos,
     Permission.videos,
@@ -38,10 +40,26 @@ class _StartViewState extends State<StartView> {
 
   List<String> availableDirectories = [];
   List<DirectoryBunch> directories = [];
+  late double _top = 0;
+  double _draggableBarHeight = 20;
+  double _draggableTop = 0;
+  double _topInfoBarHeight = 20;
+  late double topChildHeight;
+  late double bottomChildHeight;
+  double _draggableDelta = 0;
+  DirectoryBunch? directorybunchFirst = null;
+  DirectoryBunch? directorybunchSecond = null;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _draggableTop = (MediaQuery.of(context).size.height -
+              _topInfoBarHeight -
+              _draggableBarHeight) /
+          2;
+      setState(() {});
+    });
     listMediaDirectories();
   }
 
@@ -100,56 +118,100 @@ class _StartViewState extends State<StartView> {
           body: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               final totalHeight = constraints.maxHeight;
-              final double _draggableBarHeight = 20;
-              final double _topInfoBarHeight = 0;
-
-              final topChildHeight =
-                  (totalHeight - _draggableBarHeight - _topInfoBarHeight) / 2;
-              final bottomChildHeight = totalHeight -
-                  topChildHeight; // Subtracting the height of the draggable bar
-              double _draggableTop = topChildHeight;
+              topChildHeight =
+                  (totalHeight - _topInfoBarHeight - _draggableBarHeight) / 2;
+              bottomChildHeight = totalHeight - topChildHeight;
               return Stack(children: [
+                // This is the first child
                 Positioned(
-                  top: 0,
+                  top: _top,
                   left: 0,
                   right: 0,
-                  height: topChildHeight,
-                  child: FolderList(directories: directories),
-                ),
-                Positioned(
-                  top: _draggableTop,
-                  left: 0,
-                  right: 0,
-                  child: GestureDetector(
-                    onVerticalDragUpdate: (DragUpdateDetails details) {
-                      print("Drag update details: ${details.delta.dy}");
-                      setState(() {
-                        _draggableTop += details.delta.dy;
-                      });
-                    },
-                    child: Container(
-                      color: Colors.grey[400],
-                      height: _draggableBarHeight, // Standard AppBar height
-                      child: Center(
-                        child: Icon(
-                          Icons.drag_handle,
-                          color: Colors.white,
-                          size: 8,
-                        ),
-                      ),
-                    ),
+                  child: Container(
+                    color: Colors.grey[400],
+                    height: _topInfoBarHeight, // Standard AppBar height
+                    child: InfoBar(),
                   ),
                 ),
                 Positioned(
-                  top: topChildHeight + _draggableBarHeight,
                   left: 0,
                   right: 0,
-                  height: bottomChildHeight,
-                  child: FolderList(directories: directories),
+                  top: _top + _topInfoBarHeight,
+                  height: store.state.isSplit
+                      ? _draggableTop
+                      : totalHeight - _topInfoBarHeight,
+                  child: directorybunchFirst == null
+                      ? FolderList(
+                          directories: directories,
+                          onClick: (DirectoryBunch directorybunch) {
+                            print("Clicked on ${directorybunch.name}");
+                            setState(() {
+                              directorybunchFirst = directorybunch;
+                            });
+                          })
+                      : FolderChildView(
+                          directoryBunch: directorybunchFirst!,
+                          windowIndex: 1,
+                        ),
                 ),
-                // store.state.isSplit
-                //     ? FolderList(directories: directories)
-                //     : Container(),
+                // The following is the bar which can be used to partition the vertical space between the two children
+                store.state.isSplit
+                    ? Positioned(
+                        top: _draggableTop,
+                        left: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onVerticalDragUpdate: (DragUpdateDetails details) {
+                            setState(() {
+                              double delta = details.delta.dy;
+                              _draggableTop += delta;
+                              print("\nDrag update details: Delta: ${delta}");
+                              print(
+                                  "_draggableTop: $_draggableTop firstchild height:${totalHeight - _topInfoBarHeight + _draggableTop}");
+                              print(
+                                  "Infobar bottom: ${_top + _topInfoBarHeight}");
+                              if (_draggableTop < (_top + _topInfoBarHeight)) {
+                                _draggableTop = _top + _topInfoBarHeight;
+                              }
+                            });
+                          },
+                          child: Container(
+                            color: Colors.grey[400],
+                            height:
+                                _draggableBarHeight, // Standard AppBar height
+                            child: Center(
+                              child: Icon(
+                                Icons.drag_handle,
+                                color: Colors.white,
+                                size: 8,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Container(),
+                store.state.isSplit
+                    ? Positioned(
+                        top: _draggableTop +
+                            _draggableBarHeight, // Adding the height of the draggable bar
+                        left: 0,
+                        right: 0,
+                        height: bottomChildHeight,
+                        child: directorybunchSecond == null
+                            ? FolderList(
+                                directories: directories,
+                                onClick: (DirectoryBunch directorybunch) {
+                                  print("Clicked on ${directorybunch.name}");
+                                  setState(() {
+                                    directorybunchSecond = directorybunch;
+                                  });
+                                })
+                            : FolderChildView(
+                                directoryBunch: directorybunchSecond!,
+                                windowIndex: 2,
+                              ),
+                      )
+                    : Container(),
               ]);
             },
           ),
