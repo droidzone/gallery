@@ -23,9 +23,10 @@ class FolderChildView extends StatefulWidget {
     Key? key,
     required this.directoryBunch,
     required this.windowIndex,
+    required this.onNavigate,
     // required this.onPaste,
   }) : super(key: key);
-
+  Function onNavigate;
   final DirectoryBunch directoryBunch;
   // final Function onPaste;
   int windowIndex;
@@ -119,32 +120,34 @@ class _FolderChildViewState extends State<FolderChildView> {
     String dirName = p.basename(selectedFolder.path);
 
     // if is split, refresh the dir location without navigating to it
-    if (store.state.isSplit!) {
-      print("We are in a split view");
-      setState(() {
-        directoryBunch = DirectoryBunch(
-          path: selectedFolder.path,
-          name: dirName,
-          imgPath: null,
-          // imgPath: files.isEmpty ? null : files[0].path,
-        );
-      });
-      _buildFileFilter();
-    } else {
-      print("This is not a split view");
-      // ignore: use_build_context_synchronously
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return FolderChildView(
-          windowIndex: widget.windowIndex,
-          directoryBunch: DirectoryBunch(
-            path: selectedFolder.path,
-            name: dirName,
-            imgPath: null,
-            // imgPath: files.isEmpty ? null : files[0].path,
-          ),
-        );
-      }));
-    }
+    // if (store.state.isSplit!) {
+    print("We are in a split view");
+    setState(() {
+      directoryBunch = DirectoryBunch(
+        path: selectedFolder.path,
+        name: dirName,
+        imgPath: null,
+        // imgPath: files.isEmpty ? null : files[0].path,
+      );
+    });
+    widget.onNavigate(directoryBunch);
+    _buildFileFilter();
+    // }
+    // else {
+    //   print("This is not a split view");
+    //   // ignore: use_build_context_synchronously
+    //   Navigator.push(context, MaterialPageRoute(builder: (context) {
+    //     return FolderChildView(
+    //       windowIndex: widget.windowIndex,
+    //       directoryBunch: DirectoryBunch(
+    //         path: selectedFolder.path,
+    //         name: dirName,
+    //         imgPath: null,
+    //         // imgPath: files.isEmpty ? null : files[0].path,
+    //       ),
+    //     );
+    //   }));
+    // }
   }
 
   Future<Uint8List> _getThumbnail(String path) async {
@@ -230,7 +233,7 @@ class _FolderChildViewState extends State<FolderChildView> {
   String _formattedMonth(index) {
     DateTime modificationDate = _FilteredFiles[index].statSync().modified;
 
-    String formattedDate = DateFormat('MMMM').format(modificationDate);
+    String formattedDate = DateFormat('MMM').format(modificationDate);
     return formattedDate;
   }
 
@@ -296,36 +299,36 @@ class _FolderChildViewState extends State<FolderChildView> {
 
                               String fileName =
                                   p.basename(_FilteredFiles[index].path);
-                              return InkWell(
-                                onLongPress: () {
-                                  _longPressFile(index);
-                                },
-                                onTap: () {
-                                  _singleTapFile(context, index);
-                                },
-                                child: Container(
-                                  margin: EdgeInsets.all(3),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: store.state.selectedFiles!
-                                            .contains(_FilteredFiles[index])
-                                        ? Colors.green.withOpacity(0.3)
-                                        : null,
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Expanded(
-                                        flex: 5,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            // Draw a border around each file
-                                            border: Border.all(
-                                              color: Colors.grey,
-                                              width: 1,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                              return Container(
+                                margin: EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: store.state.selectedFiles!
+                                          .contains(_FilteredFiles[index])
+                                      ? Colors.green.withOpacity(0.3)
+                                      : null,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          // Draw a border around each file
+                                          border: Border.all(
+                                            color: Colors.grey,
+                                            width: 1,
                                           ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: InkWell(
+                                          onLongPress: () {
+                                            _longPressFile(index);
+                                          },
+                                          onTap: () {
+                                            _singleTapFile(context, index);
+                                          },
                                           child: Stack(
                                             children: [
                                               FutureBuilder(
@@ -377,17 +380,17 @@ class _FolderChildViewState extends State<FolderChildView> {
                                           ),
                                         ),
                                       ),
-                                      Expanded(
-                                        child: Align(
-                                            alignment: Alignment.center,
-                                            child: Wrap(
-                                              children: [
-                                                Text(formatFileName(fileName))
-                                              ],
-                                            )),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    Expanded(
+                                      child: Align(
+                                          alignment: Alignment.center,
+                                          child: Wrap(
+                                            children: [
+                                              Text(formatFileName(fileName))
+                                            ],
+                                          )),
+                                    ),
+                                  ],
                                 ),
                               );
                             } else if (_FilteredFiles[index] is Directory &&

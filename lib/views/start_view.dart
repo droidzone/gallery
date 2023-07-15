@@ -41,9 +41,9 @@ class _StartViewState extends State<StartView> {
   List<String> availableDirectories = [];
   List<DirectoryBunch> directories = [];
   late double _top = 0;
-  double _draggableBarHeight = 20;
+  double _draggableBarHeight = 40;
   double _draggableTop = 0;
-  double _topInfoBarHeight = 20;
+  double _topInfoBarHeight = 40;
   late double topChildHeight;
   late double bottomChildHeight;
   double _draggableDelta = 0;
@@ -130,7 +130,10 @@ class _StartViewState extends State<StartView> {
                   child: Container(
                     color: Colors.grey[400],
                     height: _topInfoBarHeight, // Standard AppBar height
-                    child: InfoBar(),
+                    child: InfoBar(
+                      directorybunch: directorybunchFirst,
+                      windowIndex: 1,
+                    ),
                   ),
                 ),
                 Positioned(
@@ -152,6 +155,11 @@ class _StartViewState extends State<StartView> {
                       : FolderChildView(
                           directoryBunch: directorybunchFirst!,
                           windowIndex: 1,
+                          onNavigate: (DirectoryBunch directoryBunch) {
+                            setState(() {
+                              directorybunchFirst = directoryBunch;
+                            });
+                          },
                         ),
                 ),
                 // The following is the bar which can be used to partition the vertical space between the two children
@@ -180,10 +188,9 @@ class _StartViewState extends State<StartView> {
                             height:
                                 _draggableBarHeight, // Standard AppBar height
                             child: Center(
-                              child: Icon(
-                                Icons.drag_handle,
-                                color: Colors.white,
-                                size: 8,
+                              child: InfoBar(
+                                directorybunch: directorybunchSecond,
+                                windowIndex: 2,
                               ),
                             ),
                           ),
@@ -209,6 +216,11 @@ class _StartViewState extends State<StartView> {
                             : FolderChildView(
                                 directoryBunch: directorybunchSecond!,
                                 windowIndex: 2,
+                                onNavigate: (DirectoryBunch directoryBunch) {
+                                  setState(() {
+                                    directorybunchFirst = directoryBunch;
+                                  });
+                                },
                               ),
                       )
                     : Container(),

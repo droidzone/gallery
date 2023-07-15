@@ -18,18 +18,13 @@ class FolderList extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // This creates two columns
+        crossAxisCount: 3, // This creates two columns
       ),
       itemCount: directories.length,
       itemBuilder: (context, index) {
         return ListTile(
           onTap: () {
             onClick(directories[index]);
-            // Navigator.push(context, MaterialPageRoute(builder: (context) {
-            //   return SuperFolderView(
-            //     directoryBunch: directories[index],
-            //   );
-            // }));
           },
           title: Column(
             children: [
