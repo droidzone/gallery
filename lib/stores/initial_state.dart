@@ -8,7 +8,7 @@ AppState initialState = AppState(
   selectedFilesFirst: [],
   selectedFilesSecond: [],
   filteredFiles: [],
-  activeChildWindow: 0,
+  activeChildWindow: 1,
   currentDirectoryFirst: null,
   currentDirectorySecond: null,
   firstFiles: [],

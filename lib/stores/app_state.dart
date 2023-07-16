@@ -21,6 +21,7 @@ class AppState {
   List<FileSystemEntity>? secondFiles;
   List<FileSystemEntity>? clipboardFirst;
   List<FileSystemEntity>? clipboardSecond;
+  int? filesLeftToCopy;
 
   AppState({
     this.currentView,
@@ -41,6 +42,7 @@ class AppState {
     this.secondFiles,
     this.clipboardFirst,
     this.clipboardSecond,
+    this.filesLeftToCopy,
   });
 
   AppState copyWith({

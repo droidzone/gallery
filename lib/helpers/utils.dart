@@ -139,3 +139,19 @@ bool isMediaFile(FileSystemEntity file) {
     return regExp.hasMatch(file.path);
   }
 }
+
+// Future<void> copyFiles(List<File> files, Directory targetDirectory, Function(int, int) onProgress) async {
+//   for (var i = 0; i < files.length; i++) {
+//     final file = files[i];
+//     final newFile = File('${targetDirectory.path}/${file.basename}');
+//     await file.copy(newFile.path);
+//     onProgress(i + 1, files.length); // Call the onProgress callback after each file is copied
+//   }
+// }
+
+Future<bool> copyFile(String source, String destination) async {
+  final file = File(source);
+  final newFile = File(destination);
+  await file.copy(newFile.path);
+  return true;
+}

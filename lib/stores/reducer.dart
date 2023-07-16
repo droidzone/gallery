@@ -53,89 +53,128 @@ AppState updateReducer(AppState state, action) {
         return state.copyWith(filesSecond: action.files);
       }
     case CopyFilesToClipBoardyAction:
-      _log.info("CopyFilesToClipBoardyAction reducer");
-      _log.info("action.files: ${action.files}");
-      _log.info("action.windowIndex: ${action.windowIndex}");
-      if (action.windowIndex == 1) {
-        List<FileSystemEntity> combinedList =
-            state.clipboardFirst! + action.files;
-        _log.info("Clipboard 1, combinedList: $combinedList");
-        return state.copyWith(filesCopiedForFirst: combinedList);
-      } else if (action.windowIndex == 2) {
-        List<FileSystemEntity> combinedList =
-            state.clipboardSecond! + action.files;
-        _log.info("Clipboard 2, combinedList: $combinedList");
-        return state.copyWith(filesCopiedForSecond: combinedList);
-      }
+      return handleCopyFilesToClipboard(state, action);
     case SelectFileAction:
-      _log.info("SelectFileAction reducer");
-      _log.info("action.file: ${action.file}");
-      _log.info("action.windowIndex: ${action.windowIndex}");
-
-      List<FileSystemEntity> updateSelectedFiles(
-          List<FileSystemEntity> selectedFiles) {
-        List<FileSystemEntity> combinedList = selectedFiles;
-        if (selectedFiles.contains(action.file)) {
-          combinedList.remove(action.file);
-        } else {
-          combinedList.add(action.file);
-        }
-        _log.info("SelectFileAction, combinedList: $combinedList");
-        return combinedList;
-      }
-      if (action.windowIndex == 1) {
-        return state.copyWith(
-            selectedFirst: updateSelectedFiles(state.selectedFilesFirst!));
-      } else if (action.windowIndex == 2) {
-        return state.copyWith(
-            selectedSecond: updateSelectedFiles(state.selectedFilesSecond!));
-      }
+      return handleSelectFileAction(state, action);
     case CopyFilesToClipBoardAction:
-      _log.info("CopyFilesToClipBoardAction reducer");
-      // We need to copy selectedFilesFirst to clipboardFirst if each of them dont exist in clipboardFirst, and similiarly, copy selectedFilesSecond to clipboardSecond if each of them dont exist in clipboardSecond
-      List<FileSystemEntity> updateClipboard(
-          List<FileSystemEntity> selectedFiles,
-          List<FileSystemEntity> clipboard) {
-        List<FileSystemEntity> combinedList = clipboard;
-        selectedFiles.forEach((element) {
-          if (!clipboard.contains(element)) {
-            combinedList.add(element);
-          }
-        });
-
-        _log.info("CopyFilesToClipBoardAction, combinedList: $combinedList");
-        return combinedList;
-      }
-      _log.info("Updating first clipboard");
-      updateClipboard(state.selectedFilesFirst!, state.clipboardFirst!);
-      _log.info("Updating second clipboard");
-      updateClipboard(state.selectedFilesSecond!, state.clipboardSecond!);
-      _log.info("state is $state");
+      return handleCopyFilesToClipboardAction(state, action);
+    case RemoveFileFromClipBoardAction:
+      return handleRemoveFileFromClipboardAction(state, action);
+    // case DeleteSelectedFilesAction:
+    //   return handleDeleteSelectedFiles(state, action);
   }
   return state;
 }
 
+AppState handleCopyFilesToClipboard(AppState state, action) {
+  _log.info("CopyFilesToClipBoardyAction reducer");
+  _log.info("action.files: ${action.files}");
+  _log.info("action.windowIndex: ${action.windowIndex}");
 
-    // case SelectFileAction:
-    //   _log.info("SelectFileAction reducer");
-    //   _log.info("action.file: ${action.file}");
-    //   _log.info("action.windowIndex: ${action.windowIndex}");
-    //   if (action.windowIndex == 1) {
-    //     List<FileSystemEntity> combinedList = state.selectedFilesFirst!;
-    //     if (state.selectedFilesFirst!.contains(action.file)) {
-    //       combinedList.remove(action.file);
-    //     } else {
-    //       combinedList.add(action.file);
-    //     }
-    //     _log.info("SelectFileAction, combinedList: $combinedList");
-    //     return state.copyWith(selectedFirst: combinedList);
-    //   } else if (action.windowIndex == 2) {
-    //     List<FileSystemEntity> combinedList = state.selectedFilesSecond!;
-    //     if (state.selectedFilesSecond!.contains(action.file)) {
-    //       combinedList.remove(action.file);
-    //     } else {
-    //       combinedList.add(action.file);
-    //     }
-    //     _log.info("SelectFileAction, combinedList: $combinedList");
-    //     return state.copyWith(selectedSecond: combinedList);
-    //   }
+  List<FileSystemEntity> combinedList =
+      getCombinedList(state, action, action.windowIndex);
+
+  if (action.windowIndex == 1) {
+    _log.info("Clipboard 1, combinedList: $combinedList");
+    return state.copyWith(filesCopiedForFirst: combinedList);
+  } else if (action.windowIndex == 2) {
+    _log.info("Clipboard 2, combinedList: $combinedList");
+    return state.copyWith(filesCopiedForSecond: combinedList);
+  }
+  _log.info("state is $state");
+  return state;
+}
+
+AppState handleSelectFileAction(AppState state, action) {
+  _log.info("SelectFileAction reducer");
+  _log.info("action.file: ${action.file}");
+  _log.info("action.windowIndex: ${action.windowIndex}");
+
+  List<FileSystemEntity> combinedList =
+      getUpdatedSelectedFiles(state, action, action.windowIndex);
+
+  if (action.windowIndex == 1) {
+    return state.copyWith(selectedFirst: combinedList);
+  } else if (action.windowIndex == 2) {
+    return state.copyWith(selectedSecond: combinedList);
+  }
+  return state;
+}
+
+AppState handleCopyFilesToClipboardAction(AppState state, action) {
+  _log.info("CopyFilesToClipBoardAction reducer");
+
+  List<FileSystemEntity> clipboardFirst =
+      updateClipboard(state.selectedFilesFirst!, state.clipboardFirst!);
+  List<FileSystemEntity> clipboardSecond =
+      updateClipboard(state.selectedFilesSecond!, state.clipboardSecond!);
+
+  return state.copyWith(
+      filesCopiedForFirst: clipboardFirst,
+      filesCopiedForSecond: clipboardSecond);
+}
+
+AppState handleRemoveFileFromClipboardAction(
+    AppState state, RemoveFileFromClipBoardAction action) {
+  _log.info("RemoveFileFromClipBoardAction reducer");
+  _log.info("action.file: ${action.file}");
+  _log.info("action.windowIndex: ${action.windowIndex}");
+
+  List<FileSystemEntity> combinedList;
+  if (action.windowIndex == 1) {
+    combinedList = List.from(state.clipboardFirst!);
+  } else if (action.windowIndex == 2) {
+    combinedList = List.from(state.clipboardSecond!);
+  } else {
+    _log.info("handleRemoveFileFromClipboardAction, returning state");
+    return state;
+  }
+
+  combinedList.remove(action.file);
+
+  if (action.windowIndex == 1) {
+    _log.info("RemoveFileFromClipBoardAction, combinedList: $combinedList");
+    return state.copyWith(filesCopiedForFirst: combinedList);
+  } else if (action.windowIndex == 2) {
+    _log.info("RemoveFileFromClipBoardAction, combinedList: $combinedList");
+    return state.copyWith(filesCopiedForSecond: combinedList);
+  }
+  _log.info("state is $state");
+  return state;
+}
+
+// Helper functions
+
+List<FileSystemEntity> getCombinedList(
+    AppState state, action, int windowIndex) {
+  if (windowIndex == 1) {
+    return state.clipboardFirst! + action.files;
+  } else if (windowIndex == 2) {
+    return state.clipboardSecond! + action.files;
+  }
+  _log.info("getCombinedList, windowIndex: $windowIndex");
+  return [];
+}
+
+List<FileSystemEntity> getUpdatedSelectedFiles(
+    AppState state, action, int windowIndex) {
+  List<FileSystemEntity> selectedFiles = (windowIndex == 1)
+      ? state.selectedFilesFirst!
+      : state.selectedFilesSecond!;
+  if (selectedFiles.contains(action.file)) {
+    selectedFiles.remove(action.file);
+  } else {
+    selectedFiles.add(action.file);
+  }
+  return selectedFiles;
+}
+
+List<FileSystemEntity> updateClipboard(
+    List<FileSystemEntity> selectedFiles, List<FileSystemEntity> clipboard) {
+  selectedFiles.forEach((element) {
+    if (!clipboard.contains(element)) {
+      clipboard.add(element);
+    }
+  });
+  return clipboard;
+}

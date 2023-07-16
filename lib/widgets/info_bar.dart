@@ -37,6 +37,28 @@ class InfoBar extends StatelessWidget {
     store.dispatch(ChangeDirectoryAction(path, windowIndex));
   }
 
+  bool _clipboardIsLoaded() {
+    if (windowIndex == 1) {
+      _log.info(
+          "Clipboard is loaded? ${store.state.clipboardFirst!.isNotEmpty}");
+      return store.state.clipboardFirst!.isNotEmpty;
+    } else {
+      _log.info(
+          "Clipboard is loaded? ${store.state.clipboardSecond!.isNotEmpty}");
+      return store.state.clipboardSecond!.isNotEmpty;
+    }
+  }
+
+  int _clipboardLength() {
+    if (windowIndex == 1) {
+      _log.info("Clipboard length: ${store.state.clipboardFirst!.length}");
+      return store.state.clipboardFirst!.length;
+    } else {
+      _log.info("Clipboard length: ${store.state.clipboardSecond!.length}");
+      return store.state.clipboardSecond!.length;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     store = StoreProvider.of<AppState>(context, listen: false);
@@ -127,15 +149,38 @@ class InfoBar extends StatelessWidget {
         ),
         color: Colors.grey[300],
       ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: chips,
+      child: Stack(
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: chips,
+              ),
+            ),
           ),
-        ),
+          _clipboardIsLoaded()
+              ? Positioned(
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8.0, right: 10),
+                    child: Badge(
+                      backgroundColor: Colors.blue[500],
+                      label: Text(
+                        _clipboardLength().toString(),
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      child: Icon(
+                        Icons.copy_outlined,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ), // Replace with your icon
+                )
+              : Container(),
+        ],
       ),
     );
   }

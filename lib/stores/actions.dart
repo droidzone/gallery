@@ -84,6 +84,25 @@ class DeSelectFileAction {
   DeSelectFileAction(this.file, this.windowIndex);
 }
 
+class RemoveFileFromClipBoardAction {
+  final FileSystemEntity file;
+  final int windowIndex;
+  RemoveFileFromClipBoardAction(this.file, this.windowIndex);
+}
+
 class CopyFilesToClipBoardAction {
   CopyFilesToClipBoardAction();
+}
+
+class PasteFilesFromClipBoardAction {
+  PasteFilesFromClipBoardAction();
+}
+
+class UpdateFilesLeftToCopyAction {
+  final int filesLeftToCopy;
+  UpdateFilesLeftToCopyAction(this.filesLeftToCopy);
+}
+
+class DeleteSelectedFilesAction {
+  DeleteSelectedFilesAction();
 }

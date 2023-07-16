@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:gallery/helpers/utils.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
@@ -60,6 +61,70 @@ void loadFilesMiddleware(
       store.dispatch(UpdateDirectoryBunchSecond(store.state.firstBunch!));
     }
     // store.dispatch(UpdateScreenSplitAction(action.isSplit));
+  } else if (action is PasteFilesFromClipBoardAction) {
+    _log.info("Pasting files from clipboard");
+    _log.info("state.activeChildWindow: ${store.state.activeChildWindow}");
+    _log.info("state.clipboardFirst: ${store.state.clipboardFirst}");
+    _log.info("state.clipboardSecond: ${store.state.clipboardSecond}");
+
+    String targetPath = "";
+    if (store.state.activeChildWindow == 1) {
+      targetPath = store.state.firstBunch!.path;
+    } else {
+      targetPath = store.state.secondBunch!.path;
+    }
+    _log.info("targetPath: $targetPath");
+    if (store.state.clipboardFirst!.isNotEmpty) {
+      _log.info("Pasting files from clipboardFirst");
+      int totalFiles = store.state.clipboardFirst!.length;
+      store.dispatch(UpdateFilesLeftToCopyAction(totalFiles));
+
+      for (FileSystemEntity file in store.state.clipboardFirst!) {
+        _log.info("file: $file");
+        String fileName = p.basename(file.path);
+        _log.info("fileName: $fileName");
+        String newPath = p.join(targetPath, fileName);
+        _log.info("newPath: $newPath");
+        await copyFile(file.path, newPath);
+        _log.info("Copied file");
+        store.dispatch(RemoveFileFromClipBoardAction(file, 1));
+        store.dispatch(
+            UpdateFilesLeftToCopyAction(store.state.clipboardFirst!.length));
+      }
+    } else if (store.state.clipboardSecond!.isNotEmpty) {
+      _log.info("Pasting files from clipboardSecond");
+      // int totalFiles = store.state.clipboardSecond!.length;
+      for (FileSystemEntity file in store.state.clipboardSecond!) {
+        _log.info("file: $file");
+        String fileName = p.basename(file.path);
+        _log.info("fileName: $fileName");
+        String newPath = p.join(targetPath, fileName);
+        _log.info("newPath: $newPath");
+        await copyFile(file.path, newPath);
+        _log.info("Copied file");
+        store.dispatch(RemoveFileFromClipBoardAction(file, 2));
+        store.dispatch(
+            UpdateFilesLeftToCopyAction(store.state.clipboardSecond!.length));
+      }
+    }
+    _log.info("state: ${store.state}");
+  } else if (action is DeleteSelectedFilesAction) {
+    _log.info("DeleteSelectedFiles reducer");
+    int index = store.state.activeChildWindow!;
+    _log.info("index: ${index}");
+    List<FileSystemEntity> files = (index == 1)
+        ? List.from(store.state.clipboardFirst!)
+        : List.from(store.state.clipboardSecond!);
+    _log.info("files: $files");
+    files.forEach((element) {
+      element.deleteSync(recursive: true);
+      _log.info("Deleting file: $element");
+      if (index == 1) {
+        store.state.selectedFilesFirst!.remove(element);
+      } else if (index == 2) {
+        store.state.selectedFilesSecond!.remove(element);
+      }
+    });
   }
   next(action);
 }

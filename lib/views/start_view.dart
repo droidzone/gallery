@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_interpolation_to_compose_strings, prefer_const_literals_to_create_immutables
 
 import 'dart:io';
 
@@ -15,6 +15,8 @@ import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:redux/redux.dart';
+
+import '../resources/constants.dart';
 
 final Logger _log = Logger('StartView');
 
@@ -44,6 +46,7 @@ class _StartViewState extends State<StartView> {
   DirectoryBunch? directorybunchFirst;
   DirectoryBunch? directorybunchSecond;
   late Store<AppState> store;
+  bool copying = false;
 
   @override
   void initState() {
@@ -103,6 +106,44 @@ class _StartViewState extends State<StartView> {
     store.dispatch(CopyFilesToClipBoardAction());
   }
 
+  bool areAnyFilesSelected() {
+    if (store.state.activeChildWindow == 1) {
+      return store.state.selectedFilesFirst!.isNotEmpty;
+    } else {
+      return store.state.selectedFilesSecond!.isNotEmpty;
+    }
+  }
+
+  bool isClipBoardEmpty() {
+    if (store.state.activeChildWindow == 1) {
+      return store.state.clipboardFirst!.isEmpty;
+    } else {
+      return store.state.clipboardSecond!.isEmpty;
+    }
+  }
+
+  bool isClipBoardNotEmpty() {
+    return !isClipBoardEmpty();
+  }
+
+  Future<void> _pasteFromClipBoard() async {
+    _log.info("Pasting files from clipboard");
+    setState(() {
+      copying = true;
+    });
+    await store.dispatch(PasteFilesFromClipBoardAction());
+    String targetPath;
+    if (store.state.activeChildWindow == 1) {
+      targetPath = store.state.firstBunch!.path;
+    } else {
+      targetPath = store.state.secondBunch!.path;
+    }
+    store.dispatch(LoadFilesAction(targetPath, store.state.activeChildWindow!));
+
+    // show a dialog to confirm that the user wants to paste the files
+    // Give me dart code to display dialog
+  }
+
   @override
   Widget build(BuildContext context) {
     return StoreConnector<AppState, Store>(
@@ -118,14 +159,178 @@ class _StartViewState extends State<StartView> {
               ),
             ),
             actions: [
-              IconButton(
-                  onPressed: () {
-                    _copyFilesToClipBoard();
-                  },
-                  icon: Icon(
-                    Icons.file_copy_sharp,
-                    color: Theme.of(context).colorScheme.inversePrimary,
-                  )),
+              areAnyFilesSelected()
+                  ? IconButton(
+                      onPressed: () {
+                        _copyFilesToClipBoard();
+                      },
+                      icon: Icon(
+                        Icons.file_copy_sharp,
+                        color: Theme.of(context).colorScheme.inversePrimary,
+                      ))
+                  : Container(),
+              isClipBoardNotEmpty()
+                  ? IconButton(
+                      onPressed: () {
+                        _log.info("Pressed paste");
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              _log.info("state is ${store.state}");
+                              return AlertDialog(
+                                title: const Text(
+                                  'Start Copying Files?',
+                                  style: kDialogHeadingStyle,
+                                ),
+                                content: SingleChildScrollView(
+                                  child: ListBody(
+                                    children: <Widget>[
+                                      Text(
+                                          'Do you wish to copy files from clipboard to this directory?',
+                                          style: kDialogTextStyle),
+                                      SizedBox(
+                                        height: 10,
+                                      ),
+                                      Text(
+                                        'Files will be copied to ' +
+                                            (store.state.activeChildWindow == 1
+                                                ? store.state.firstBunch!.path
+                                                : store
+                                                    .state.secondBunch!.path),
+                                        style: kDialogTextStyle,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: const Text('Yes',
+                                        style: kButtonOkStyle),
+                                    onPressed: () async {
+                                      showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: const Text(
+                                                'Start Copying Files?',
+                                                style: kDialogHeadingStyle,
+                                              ),
+                                              content: SingleChildScrollView(
+                                                child: ListBody(
+                                                  children: <Widget>[
+                                                    Text('Copying files..',
+                                                        style:
+                                                            kDialogTextStyle),
+                                                    SizedBox(
+                                                      height: 10,
+                                                    ),
+                                                    Text(store.state
+                                                            .filesLeftToCopy
+                                                            .toString() +
+                                                        'left to copy'),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          });
+                                      await _pasteFromClipBoard();
+                                      Navigator.of(context).pop();
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: const Text(
+                                      'Cancel',
+                                      style: kButtonCancelStyle,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            });
+                      },
+                      icon: Icon(
+                        Icons.content_paste_sharp,
+                        color: Theme.of(context).colorScheme.inversePrimary,
+                      ),
+                    )
+                  : Container(),
+              areAnyFilesSelected()
+                  ? IconButton(
+                      onPressed: () {
+                        _log.info("Pressed delete");
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              _log.info("state is ${store.state}");
+                              List<FileSystemEntity> filesToDelete = [];
+                              filesToDelete = store.state.activeChildWindow == 1
+                                  ? store.state.selectedFilesFirst!
+                                  : store.state.selectedFilesSecond!;
+                              _log.info("files to delete are $filesToDelete");
+                              return AlertDialog(
+                                title: const Text(
+                                  'Really Delete Files?',
+                                  style: kDialogHeadingStyle,
+                                ),
+                                content: SingleChildScrollView(
+                                  child: ListBody(
+                                    children: <Widget>[
+                                      Text(
+                                          'Do you wish to delete these files permanenetly?',
+                                          style: kDialogTextStyle),
+                                      SizedBox(
+                                        height: 10,
+                                      ),
+                                      ...filesToDelete.map(
+                                        (e) => Text(
+                                          e.path,
+                                          style: kDialogTextStyle,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: const Text('Yes',
+                                        style: kButtonOkStyle),
+                                    onPressed: () async {
+                                      await store.dispatch(
+                                          DeleteSelectedFilesAction());
+                                      Navigator.of(context).pop();
+                                      String targetPath;
+                                      if (store.state.activeChildWindow == 1) {
+                                        targetPath =
+                                            store.state.firstBunch!.path;
+                                      } else {
+                                        targetPath =
+                                            store.state.secondBunch!.path;
+                                      }
+                                      store.dispatch(LoadFilesAction(targetPath,
+                                          store.state.activeChildWindow!));
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: const Text(
+                                      'Cancel',
+                                      style: kButtonCancelStyle,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            });
+                      },
+                      icon: Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                      ))
+                  : Container(),
               IconButton(
                 onPressed: () {
                   _log.info("Pressed split screen");
