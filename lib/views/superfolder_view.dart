@@ -190,8 +190,8 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                           store.state.isSplit ? topChildHeight : totalHeight,
                       child: FolderChildView(
                         windowIndex: 0,
-                        directoryBunch: widget.directoryBunch,
-                        onNavigate: () {},
+                        // directoryBunch: widget.directoryBunch,
+                        // onNavigate: () {},
                       ),
                     ),
                     store.state.isSplit
@@ -203,8 +203,8 @@ class _SuperFolderViewState extends State<SuperFolderView> {
                             height: bottomChildHeight,
                             child: FolderChildView(
                               windowIndex: 1,
-                              directoryBunch: widget.directoryBunch,
-                              onNavigate: () {},
+                              // directoryBunch: widget.directoryBunch,
+                              // onNavigate: () {},
                             ),
                           )
                         : Container(),

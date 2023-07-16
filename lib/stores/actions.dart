@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:gallery/structure/directory_bunch.dart';
+
 class UpdateCurrentViewAction {
   final String view;
   UpdateCurrentViewAction(this.view);
@@ -16,4 +20,48 @@ class UpdateScreenSplitAction {
 class UpdateActiveChildWindow {
   final int childWindowSelected;
   UpdateActiveChildWindow(this.childWindowSelected);
+}
+
+class UpdateDirectoryFirst {
+  final String currentDirFirst;
+  UpdateDirectoryFirst(this.currentDirFirst);
+}
+
+class UpdateDirectorySecond {
+  final String currentDirSecond;
+  UpdateDirectorySecond(this.currentDirSecond);
+}
+
+class UpdateDirectoryBunchFirst {
+  final DirectoryBunch bunchFirst;
+  UpdateDirectoryBunchFirst(this.bunchFirst);
+}
+
+class UpdateDirectoryBunchSecond {
+  final DirectoryBunch bunchSecond;
+  UpdateDirectoryBunchSecond(this.bunchSecond);
+}
+
+class UpdateDirectoryBunch {
+  final DirectoryBunch bunch;
+  final int windowIndex;
+  UpdateDirectoryBunch(this.bunch, this.windowIndex);
+}
+
+class LoadFilesAction {
+  final String path;
+  final int windowIndex;
+  LoadFilesAction(this.path, this.windowIndex);
+}
+
+class UpdateFilesAction {
+  List<FileSystemEntity> files;
+  final int windowIndex;
+  UpdateFilesAction(this.files, this.windowIndex);
+}
+
+class ChangeDirectoryAction {
+  final String path;
+  final int windowIndex;
+  ChangeDirectoryAction(this.path, this.windowIndex);
 }

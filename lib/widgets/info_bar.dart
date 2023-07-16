@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/structure/directory_chip.dart';
@@ -12,43 +13,87 @@ class InfoBar extends StatelessWidget {
     super.key,
     required this.directorybunch,
     required this.windowIndex,
+    required this.changeDirCallBack,
   });
   DirectoryBunch? directorybunch;
   int windowIndex;
+  late Store<AppState> store;
+  Function changeDirCallBack;
 
-  void NavigateTo(path) {
-    print("Navigate to $path");
+  void NavigateTo(path) async {
+    // print("Navigate to $path");
     print("Window Index: $windowIndex");
+    if (directorybunch == null) return;
+    print("Current path: ${directorybunch!.path}");
+    if (directorybunch!.path == path) return;
+    print("Navigate to $path");
+    store.dispatch(ChangeDirectoryAction(path, windowIndex));
+    // String name = path.split("/").last;
+    // DirectoryBunch _tmpBunch = DirectoryBunch(
+    //   path: path,
+    //   name: name,
+    // );
+    // if (windowIndex == 1) {
+    //   print("Changing first bunch");
+    //   await store.dispatch(UpdateDirectoryBunchFirst(_tmpBunch));
+    // } else {
+    //   print("Changing second bunch");
+    //   await store.dispatch(UpdateDirectoryBunchSecond(_tmpBunch));
+    // }
+    // changeDirCallBack(_tmpBunch);
+
+    // Check if dispatch was successful.
+
+    // store.dispatch(UpdateDirectoryBunchFirst(_tmpFirst!));
+    // StoreProvider.of<AppState>(context, listen: false)
+    // .dispatch(ChangeDirectoryAction(path, windowIndex));
   }
 
-  Widget pathBar(String path) {
+  @override
+  Widget build(BuildContext context) {
+    store = StoreProvider.of<AppState>(context, listen: false);
+    print("In InfoBar, directorybunch is ${directorybunch!.path}");
+    print("windowIndex is $windowIndex");
+    DirectoryBunch dirbunch;
+    print("From InfoBar, windowIndex is ${windowIndex}");
+    if (windowIndex == 1) {
+      dirbunch = store.state.firstBunch!;
+    } else {
+      dirbunch = store.state.secondBunch!;
+    }
+    print("From store, dirbunch is ${dirbunch.path}");
+    // print("store is $store");
+    String path = dirbunch.path;
+
+    // directorybunch != null ? directorybunch!.path : "/storage/emulated/0";
     List<Widget> chips = [];
     String rootPath = "/";
     List<String> directories = path.split("/");
 
-    // Check if the path starts with "/storage/emulated/0"
     if (directories.length >= 4 &&
         directories[1] == "storage" &&
         directories[2] == "emulated" &&
         directories[3] == "0") {
-      // Create a single chip for "Internal Storage"
-      DirectoryChip directoryChip = DirectoryChip(
-        displayText: "Internal Storage",
-        actualPath: "/storage/emulated/0",
-        rootPath: rootPath,
+      chips.add(
+        IconButton(
+          onPressed: () {
+            print('InfoBar: Directory Path: /storage/emulated/0');
+            NavigateTo("/storage/emulated/0");
+          },
+          icon: Icon(
+            Icons.home,
+            color: Colors.black,
+          ),
+        ),
       );
 
-      chips.add(dirChip(directoryChip));
-
-      // Add separator chip
-      DirectoryChip separatorChip = DirectoryChip(
-        displayText: " > ",
-        actualPath: "",
-        rootPath: "",
+      chips.add(
+        Icon(
+          Icons.chevron_right_sharp,
+          color: Colors.black,
+        ),
       );
-      chips.add(dirChip(separatorChip));
 
-      // Skip the first three directories ("storage", "emulated", and "0")
       directories.removeRange(1, 4);
       rootPath += "storage/emulated/0/";
     }
@@ -59,76 +104,33 @@ class InfoBar extends StatelessWidget {
       String displayText = directories[i];
       String actualPath = rootPath + directories[i];
 
-      DirectoryChip directoryChip = DirectoryChip(
-        displayText: displayText,
-        actualPath: actualPath,
-        rootPath: rootPath,
+      chips.add(
+        InkWell(
+          onTap: () {
+            NavigateTo(actualPath);
+          },
+          child: Text(displayText.toUpperCase()),
+        ),
       );
 
-      chips.add(dirChip(directoryChip));
-
       if (i != directories.length - 1) {
-        DirectoryChip separatorChip = DirectoryChip(
-          displayText: " > ",
-          actualPath: "",
-          rootPath: "",
+        chips.add(
+          InkWell(
+            onTap: () {},
+            child: IconButton(
+              onPressed: () {},
+              icon: Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.black,
+              ),
+            ),
+          ),
         );
-        chips.add(dirChip(separatorChip));
       }
-      // Add icon for Navigate back
 
       rootPath += directories[i] + "/";
     }
-    // chips.add(IconButton(onPressed: () {}, icon: Icon(Icons.arrow_back)));
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: chips,
-        mainAxisAlignment: MainAxisAlignment.start,
-      ),
-    );
-  }
-
-  Widget dirChip(DirectoryChip directoryChip) {
-    if (directoryChip.displayText == " > ") {
-      return InkWell(
-        onTap: () {},
-        child: IconButton(
-          onPressed: () {},
-          icon: Icon(
-            Icons.arrow_forward_ios,
-            color: Colors.black,
-          ),
-        ),
-      );
-    }
-
-    if (directoryChip.displayText == "Internal Storage") {
-      return IconButton(
-        onPressed: () {
-          print('Directory Path: ${directoryChip.actualPath}');
-          NavigateTo("/storage/emulated/0");
-        },
-        icon: Icon(
-          Icons.home,
-          color: Colors.black,
-        ),
-      );
-    }
-
-    return InkWell(
-      onTap: () {
-        print('Directory Path: ${directoryChip.actualPath}');
-      },
-      child: Text(directoryChip.displayText.toUpperCase()),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    Store<AppState> store = StoreProvider.of<AppState>(context, listen: false);
-    print("In InfoBar, directorybunch is $directorybunch");
     return Container(
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
@@ -140,15 +142,16 @@ class InfoBar extends StatelessWidget {
         ),
         color: Colors.grey[300],
       ),
-      // color: Colors.grey[300], // Change this to your desired color
       child: Align(
         alignment: Alignment.centerLeft,
-        child: directorybunch != null
-            ? pathBar(directorybunch!.path)
-            : pathBar("/storage/emulated/0"),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: chips,
+            mainAxisAlignment: MainAxisAlignment.start,
+          ),
+        ),
       ),
     );
   }
 }
-
-// Instead of all these functions, make it tightly intergrated with the build function. Remove the functions which are used to generate the widgets, and add their logic to build function. Make it more efficient.

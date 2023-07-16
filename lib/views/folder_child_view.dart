@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_redux/flutter_redux.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/views/picture_view.dart';
@@ -21,13 +22,13 @@ import 'package:flutter/material.dart';
 class FolderChildView extends StatefulWidget {
   FolderChildView({
     Key? key,
-    required this.directoryBunch,
+    // required this.directoryBunch,
     required this.windowIndex,
-    required this.onNavigate,
+    // required this.onNavigate,
     // required this.onPaste,
   }) : super(key: key);
-  Function onNavigate;
-  final DirectoryBunch directoryBunch;
+  // Function onNavigate;
+  // final DirectoryBunch directoryBunch;
   // final Function onPaste;
   int windowIndex;
 
@@ -45,14 +46,14 @@ class _FolderChildViewState extends State<FolderChildView> {
   @override
   void initState() {
     super.initState();
-    directoryBunch = widget.directoryBunch;
-    _buildFileFilter();
+    // directoryBunch = widget.directoryBunch;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     store = StoreProvider.of<AppState>(context, listen: false);
+    _buildFileFilter();
   }
 
   Future requestPermission(Permission permission) async {
@@ -80,27 +81,59 @@ class _FolderChildViewState extends State<FolderChildView> {
     }
   }
 
-  void _buildFileFilter() {
-    print("Building file filter...");
-    print("Directory: ${directoryBunch!.path}");
-    List<FileSystemEntity> files = [];
-    final Directory directory = Directory(directoryBunch!.path);
-    List<FileSystemEntity> tmpFiles = directory.listSync();
-    // _files = directory.listSync();
-    print("Files: $tmpFiles");
-
-    for (var file in tmpFiles) {
-      if (file is File) {
-        print("$file is a file");
-      } else {
-        print("$file is not a file");
-      }
-      files.add(file);
+  void updateState(DirectoryBunch _newBunch) {
+    if (widget.windowIndex == 1) {
+      print("We are in the first window");
+      store.dispatch(UpdateDirectoryBunchFirst(_newBunch));
+    } else {
+      print("We are in the second window");
+      store.dispatch(UpdateDirectoryBunchSecond(_newBunch));
     }
-    setState(() {
-      _AllFiles = files;
-      _FilteredFiles = files;
-    });
+  }
+
+  Future<bool> _buildFileFilter() async {
+    print("Building file filter...");
+    // print("Directory: ${directoryBunch!.path}");
+    print("store is $store");
+    List<FileSystemEntity> files = [];
+    final Directory directory = Directory(
+        // store.
+        store.state.firstBunch!.path);
+
+    try {
+      List<FileSystemEntity> tmpFiles = directory
+          .listSync(); //At this point, we might get a Unhandled Exception: PathAccessException: Directory listing failed, path = '/storage/emulated/0/Android/data/' (OS Error: Permission denied, errno = 13) We need to handle it with try catch. If there is an error, display a toast message to the user that the app needs permission to access the files.
+
+      print("Files: $tmpFiles");
+      store.dispatch(UpdateFilesAction(tmpFiles, widget.windowIndex));
+
+      // for (var file in tmpFiles) {
+      //   if (file is File) {
+      //     print("$file is a file");
+      //   } else {
+      //     print("$file is not a file");
+      //   }
+      //   files.add(file);
+      // }
+      // setState(() {
+      //   // _AllFiles = tmpFiles;
+      //   // _FilteredFiles = tmpFiles;
+
+      // });
+      // Only after files are loaded successfully, shall we update the current path in state.
+      return true;
+    } on Exception catch (e) {
+      print('An error occurred while accessing the directory: $e');
+      Fluttertoast.showToast(
+          msg: "No permission to access this directory!",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.TOP,
+          timeInSecForIosWeb: 5,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      return false;
+    }
   }
 
   bool _isMediaFile(String filePath) {
@@ -110,7 +143,7 @@ class _FolderChildViewState extends State<FolderChildView> {
   }
 
   Future<void> loadFolder(BuildContext context, selectedFolder) async {
-    print("Loading folder: $selectedFolder");
+    print("In FolderChildView: Loading folder: $selectedFolder");
 
     // This line brings prewiew image of the folder, but is performance heavy
     // List<FileSystemEntity> files =
@@ -121,33 +154,22 @@ class _FolderChildViewState extends State<FolderChildView> {
 
     // if is split, refresh the dir location without navigating to it
     // if (store.state.isSplit!) {
-    print("We are in a split view");
+    // print("We are in a split view");
+    DirectoryBunch _newBunch = DirectoryBunch(
+      path: selectedFolder.path,
+      name: dirName,
+      imgPath: null,
+      // imgPath: files.isEmpty ? null : files[0].path,
+    );
+
     setState(() {
-      directoryBunch = DirectoryBunch(
-        path: selectedFolder.path,
-        name: dirName,
-        imgPath: null,
-        // imgPath: files.isEmpty ? null : files[0].path,
-      );
+      directoryBunch = _newBunch;
     });
-    widget.onNavigate(directoryBunch);
-    _buildFileFilter();
-    // }
-    // else {
-    //   print("This is not a split view");
-    //   // ignore: use_build_context_synchronously
-    //   Navigator.push(context, MaterialPageRoute(builder: (context) {
-    //     return FolderChildView(
-    //       windowIndex: widget.windowIndex,
-    //       directoryBunch: DirectoryBunch(
-    //         path: selectedFolder.path,
-    //         name: dirName,
-    //         imgPath: null,
-    //         // imgPath: files.isEmpty ? null : files[0].path,
-    //       ),
-    //     );
-    //   }));
-    // }
+    // widget.onNavigate(directoryBunch);
+    bool successfulChangeDirectory = await _buildFileFilter();
+    if (successfulChangeDirectory) {
+      updateState(_newBunch);
+    }
   }
 
   Future<Uint8List> _getThumbnail(String path) async {
@@ -216,22 +238,22 @@ class _FolderChildViewState extends State<FolderChildView> {
     });
   }
 
-  String _formattedDate(index) {
-    DateTime modificationDate = _FilteredFiles[index].statSync().modified;
+  String _formattedDate(_file) {
+    DateTime modificationDate = _file.statSync().modified;
 
     String formattedDate = DateFormat('dd-MM-yyyy').format(modificationDate);
     return formattedDate;
   }
 
-  String _formattedDD(index) {
-    DateTime modificationDate = _FilteredFiles[index].statSync().modified;
+  String _formattedDD(_file) {
+    DateTime modificationDate = _file.statSync().modified;
 
     String formattedDate = DateFormat('dd').format(modificationDate);
     return formattedDate;
   }
 
-  String _formattedMonth(index) {
-    DateTime modificationDate = _FilteredFiles[index].statSync().modified;
+  String _formattedMonth(_file) {
+    DateTime modificationDate = _file.statSync().modified;
 
     String formattedDate = DateFormat('MMM').format(modificationDate);
     return formattedDate;
@@ -265,13 +287,22 @@ class _FolderChildViewState extends State<FolderChildView> {
 
   @override
   Widget build(BuildContext context) {
+    // print(
+    //     "In FolderChildView build method, directoryBunch is ${directoryBunch!.path}");
+    print("store is $store");
     return StoreConnector<AppState, Store>(
       converter: (store) => store,
       builder: (context, store) {
+        print(
+            "In FolderChildView build method, store is $store. It is rebuilding...");
+        List<FileSystemEntity> _files = widget.windowIndex == 1
+            ? store.state.firstFiles
+            : store.state.secondFiles;
+
         return Stack(
           children: [
             Scaffold(
-              body: _FilteredFiles.isEmpty
+              body: _files.isEmpty
                   ? Center(
                       child: Text('No files found'),
                     )
@@ -291,20 +322,18 @@ class _FolderChildViewState extends State<FolderChildView> {
                               SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
                           ),
-                          itemCount: _FilteredFiles.length,
+                          itemCount: _files.length,
                           itemBuilder: (context, index) {
-                            if (_isMediaFile(_FilteredFiles[index].path)) {
-                              print(
-                                  "Media File found: ${_FilteredFiles[index]}");
+                            if (_isMediaFile(_files[index].path)) {
+                              print("Media File found");
 
-                              String fileName =
-                                  p.basename(_FilteredFiles[index].path);
+                              String fileName = p.basename(_files[index].path);
                               return Container(
                                 margin: EdgeInsets.all(3),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10),
                                   color: store.state.selectedFiles!
-                                          .contains(_FilteredFiles[index])
+                                          .contains(_files[index])
                                       ? Colors.green.withOpacity(0.3)
                                       : null,
                                 ),
@@ -333,7 +362,7 @@ class _FolderChildViewState extends State<FolderChildView> {
                                             children: [
                                               FutureBuilder(
                                                 future: _getThumbnail(
-                                                    _AllFiles[index].path),
+                                                    _files[index].path),
                                                 builder: (BuildContext context,
                                                     AsyncSnapshot<Uint8List>
                                                         snapshot) {
@@ -359,14 +388,16 @@ class _FolderChildViewState extends State<FolderChildView> {
                                                   child: Column(
                                                     children: [
                                                       Text(
-                                                        _formattedDD(index),
+                                                        _formattedDD(
+                                                            _files[index]),
                                                         style: TextStyle(
                                                           color: Colors.black,
                                                           fontSize: 12,
                                                         ),
                                                       ),
                                                       Text(
-                                                        _formattedMonth(index),
+                                                        _formattedMonth(
+                                                            _files[index]),
                                                         style: TextStyle(
                                                           color: Colors.black,
                                                           fontSize: 12,
@@ -393,17 +424,18 @@ class _FolderChildViewState extends State<FolderChildView> {
                                   ],
                                 ),
                               );
-                            } else if (_FilteredFiles[index] is Directory &&
+                            } else if (_files[index] is Directory &&
                                 store.state.mainviewCurrentTab == 'Folders') {
-                              print("Directory found: ${_AllFiles[index]}");
+                              print("Directory found: ${_files[index]}");
                               print("currentview: ${store.state.currentView}");
                               //  &&
                               //   store.state.currentView == 'Folders'
-                              String dirName =
-                                  p.basename(_AllFiles[index].path);
+                              String dirName = p.basename(_files[index].path);
                               return InkWell(
                                 onTap: () async {
-                                  loadFolder(context, _AllFiles[index]);
+                                  // loadFolder(context, _AllFiles[index]);
+                                  store.dispatch(ChangeDirectoryAction(
+                                      _files[index].path, widget.windowIndex));
                                 },
                                 child: Column(
                                   children: <Widget>[
@@ -425,7 +457,7 @@ class _FolderChildViewState extends State<FolderChildView> {
                               );
                             } else {
                               print(
-                                  "Found non media file: ${_FilteredFiles[index]}, or view is set to Gallery and directories are being hidden. Not displaying");
+                                  "Found non media file: ${_files[index]}, or view is set to Gallery and directories are being hidden. Not displaying");
                               return Container();
                             }
                           },

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:gallery/stores/app_state.dart';
+import 'package:gallery/stores/appstate.middleware.dart';
 import 'package:gallery/stores/initial_state.dart';
 import 'package:gallery/stores/reducer.dart';
 import 'package:gallery/views/start_view.dart';
@@ -11,7 +12,7 @@ Future<void> main() async {
 
   final store = Store<AppState>(
     updateReducer,
-    // middleware: [fetchAppointmentsMiddleware],
+    middleware: [loadFilesMiddleware],
     initialState: initialState,
   );
   runApp(MyApp(

@@ -23,13 +23,6 @@ class StartView extends StatefulWidget {
     Permission.videos,
     Permission.storage,
   ];
-  final List<String> mediaDirectories = [
-    'DCIM',
-    'Pictures',
-    'Movies',
-    'Music',
-    'Download'
-  ];
 
   @override
   State<StartView> createState() => _StartViewState();
@@ -40,15 +33,15 @@ class _StartViewState extends State<StartView> {
 
   List<String> availableDirectories = [];
   List<DirectoryBunch> directories = [];
-  late double _top = 0;
-  double _draggableBarHeight = 40;
+  final double _top = 0;
+  final double _draggableBarHeight = 40;
   double _draggableTop = 0;
-  double _topInfoBarHeight = 40;
+  final double _topInfoBarHeight = 40;
   late double topChildHeight;
   late double bottomChildHeight;
-  double _draggableDelta = 0;
-  DirectoryBunch? directorybunchFirst = null;
-  DirectoryBunch? directorybunchSecond = null;
+  DirectoryBunch? directorybunchFirst;
+  DirectoryBunch? directorybunchSecond;
+  late Store<AppState> store;
 
   @override
   void initState() {
@@ -60,36 +53,47 @@ class _StartViewState extends State<StartView> {
           2;
       setState(() {});
     });
-    listMediaDirectories();
+    _listMediaDirectories();
+    store = StoreProvider.of<AppState>(context, listen: false);
   }
 
-  void listMediaDirectories() async {
-    Directory? dir = await getExternalStorageDirectory();
-    List<DirectoryBunch> tmpDirectoryList = [];
+  void _listMediaDirectories() async {
     await getRequiredPermissions(widget.requiredPermissions);
-
-    if (dir != null) {
-      for (String directory in widget.mediaDirectories) {
-        String path = "${dir.path.split("Android")[0]}$directory";
-        try {
-          List<FileSystemEntity> files = await Directory(path).list().toList();
-          print('Files in $directory: $files');
-          // tmpFolderList.add(directory);
-          tmpDirectoryList.add(DirectoryBunch(
-            path: path,
-            name: directory,
-            imgPath: files[0].path,
-          ));
-        } catch (e) {
-          print('An error occurred while getting files from $directory: $e');
-        }
+    Directory? dir = await getExternalStorageDirectory();
+    print("App Storage Directory: $dir");
+    String path = "${dir!.path.split("Android")[0]}";
+    print("Internal Storage Directory: $path");
+    // List directories in path
+    List<FileSystemEntity> files = await Directory(path).list().toList();
+    print("No of directories found in $path: ${files.length}");
+    List<DirectoryBunch> tmpDirectoryList = [];
+    for (FileSystemEntity file in files) {
+      if (file is Directory) {
+        String name = file.path.split("/").last;
+        print("Directory name: $name");
+        // if (widget.mediaDirectories.contains(name)) {
+        tmpDirectoryList.add(DirectoryBunch(
+          path: file.path,
+          name: name,
+          imgPath: file.path,
+        ));
+        // }
       }
-      setState(() {
-        directories = tmpDirectoryList;
-      });
-    } else {
-      print('Directory is null');
     }
+    DirectoryBunch _tmpFirst = DirectoryBunch(
+      path: path,
+      name: "Internal Storage",
+      imgPath: null,
+    );
+    print("Setting starting directory to ${_tmpFirst.name}");
+    await store.dispatch(UpdateDirectoryBunchFirst(_tmpFirst!));
+    await store.dispatch(UpdateDirectoryBunchSecond(_tmpFirst!));
+
+    setState(() {
+      directories = tmpDirectoryList;
+      directorybunchFirst = _tmpFirst;
+      directorybunchSecond = directorybunchFirst;
+    });
   }
 
   @override
@@ -130,10 +134,21 @@ class _StartViewState extends State<StartView> {
                   child: Container(
                     color: Colors.grey[400],
                     height: _topInfoBarHeight, // Standard AppBar height
-                    child: InfoBar(
-                      directorybunch: directorybunchFirst,
-                      windowIndex: 1,
-                    ),
+                    child: store.state.firstBunch != null
+                        ? InfoBar(
+                            directorybunch: store.state.firstBunch,
+                            windowIndex: 1,
+                            changeDirCallBack: (DirectoryBunch directoryBunch) {
+                              print(
+                                  "Navigating first window to ${directoryBunch.path} from start_view...");
+                              setState(() {
+                                directorybunchFirst = directoryBunch;
+                                store.dispatch(
+                                    UpdateDirectoryBunchFirst(directoryBunch));
+                              });
+                            },
+                          )
+                        : Container(),
                   ),
                 ),
                 Positioned(
@@ -143,24 +158,19 @@ class _StartViewState extends State<StartView> {
                   height: store.state.isSplit
                       ? _draggableTop
                       : totalHeight - _topInfoBarHeight,
-                  child: directorybunchFirst == null
-                      ? FolderList(
-                          directories: directories,
-                          onClick: (DirectoryBunch directorybunch) {
-                            print("Clicked on ${directorybunch.name}");
-                            setState(() {
-                              directorybunchFirst = directorybunch;
-                            });
-                          })
-                      : FolderChildView(
-                          directoryBunch: directorybunchFirst!,
+                  child: store.state.firstBunch != null
+                      ? FolderChildView(
+                          // directoryBunch: store.state.firstBunch,
                           windowIndex: 1,
-                          onNavigate: (DirectoryBunch directoryBunch) {
-                            setState(() {
-                              directorybunchFirst = directoryBunch;
-                            });
-                          },
-                        ),
+                          // onNavigate: (DirectoryBunch directoryBunch) {
+                          //   setState(() {
+                          //     print(
+                          //         "Navigating first window to ${directoryBunch.name} from start_view...");
+                          //     directorybunchFirst = directoryBunch;
+                          //   });
+                          // },
+                        )
+                      : Container(),
                 ),
                 // The following is the bar which can be used to partition the vertical space between the two children
                 store.state.isSplit
@@ -189,8 +199,16 @@ class _StartViewState extends State<StartView> {
                                 _draggableBarHeight, // Standard AppBar height
                             child: Center(
                               child: InfoBar(
-                                directorybunch: directorybunchSecond,
+                                directorybunch: store.state.secondBunch,
                                 windowIndex: 2,
+                                changeDirCallBack:
+                                    (DirectoryBunch directoryBunch) {
+                                  setState(() {
+                                    print(
+                                        "Navigating second window to ${directoryBunch.name} from start_view...");
+                                    directorybunchSecond = directoryBunch;
+                                  });
+                                },
                               ),
                             ),
                           ),
@@ -204,24 +222,26 @@ class _StartViewState extends State<StartView> {
                         left: 0,
                         right: 0,
                         height: bottomChildHeight,
-                        child: directorybunchSecond == null
-                            ? FolderList(
-                                directories: directories,
-                                onClick: (DirectoryBunch directorybunch) {
-                                  print("Clicked on ${directorybunch.name}");
-                                  setState(() {
-                                    directorybunchSecond = directorybunch;
-                                  });
-                                })
-                            : FolderChildView(
-                                directoryBunch: directorybunchSecond!,
-                                windowIndex: 2,
-                                onNavigate: (DirectoryBunch directoryBunch) {
-                                  setState(() {
-                                    directorybunchFirst = directoryBunch;
-                                  });
-                                },
-                              ),
+                        child:
+                            //  directorybunchSecond == null
+                            //     ? FolderList(
+                            //         directories: directories,
+                            //         onClick: (DirectoryBunch directorybunch) {
+                            //           print("Clicked on ${directorybunch.name}");
+                            //           setState(() {
+                            //             directorybunchSecond = directorybunch;
+                            //           });
+                            //         })
+                            //     :
+                            FolderChildView(
+                          // directoryBunch: store.state.secondBunch,
+                          windowIndex: 2,
+                          // onNavigate: (DirectoryBunch directoryBunch) {
+                          //   setState(() {
+                          //     directorybunchFirst = directoryBunch;
+                          //   });
+                          // },
+                        ),
                       )
                     : Container(),
               ]);
