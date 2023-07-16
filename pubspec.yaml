@@ -47,6 +47,8 @@ dependencies:
   fluttertoast: ^8.2.2
   flutter_redux: ^0.10.0
   redux: ^5.0.0
+  redux_dev_tools: ^0.7.0
+  flutter_redux_dev_tools: ^0.5.2
 
 dev_dependencies:
   flutter_test:

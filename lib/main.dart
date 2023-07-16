@@ -6,6 +6,7 @@ import 'package:gallery/stores/initial_state.dart';
 import 'package:gallery/stores/reducer.dart';
 import 'package:gallery/views/start_view.dart';
 import 'package:redux/redux.dart';
+import 'package:redux_dev_tools/redux_dev_tools.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,11 @@ Future<void> main() async {
     middleware: [loadFilesMiddleware],
     initialState: initialState,
   );
+  // final store = DevToolsStore<AppState>(
+  //   updateReducer,
+  //   middleware: [loadFilesMiddleware],
+  //   initialState: initialState,
+  // );
   runApp(MyApp(
     store: store,
   ));

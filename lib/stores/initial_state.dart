@@ -10,4 +10,6 @@ AppState initialState = AppState(
   activeChildWindow: 0,
   currentDirectoryFirst: null,
   currentDirectorySecond: null,
+  firstFiles: [],
+  secondFiles: [],
 );

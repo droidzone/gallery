@@ -11,57 +11,40 @@ import 'package:redux/redux.dart';
 class InfoBar extends StatelessWidget {
   InfoBar({
     super.key,
-    required this.directorybunch,
+    // required this.directorybunch,
     required this.windowIndex,
-    required this.changeDirCallBack,
   });
   DirectoryBunch? directorybunch;
   int windowIndex;
   late Store<AppState> store;
-  Function changeDirCallBack;
 
   void NavigateTo(path) async {
-    // print("Navigate to $path");
-    print("Window Index: $windowIndex");
-    if (directorybunch == null) return;
-    print("Current path: ${directorybunch!.path}");
-    if (directorybunch!.path == path) return;
-    print("Navigate to $path");
-    store.dispatch(ChangeDirectoryAction(path, windowIndex));
-    // String name = path.split("/").last;
-    // DirectoryBunch _tmpBunch = DirectoryBunch(
-    //   path: path,
-    //   name: name,
-    // );
-    // if (windowIndex == 1) {
-    //   print("Changing first bunch");
-    //   await store.dispatch(UpdateDirectoryBunchFirst(_tmpBunch));
-    // } else {
-    //   print("Changing second bunch");
-    //   await store.dispatch(UpdateDirectoryBunchSecond(_tmpBunch));
-    // }
-    // changeDirCallBack(_tmpBunch);
-
-    // Check if dispatch was successful.
-
-    // store.dispatch(UpdateDirectoryBunchFirst(_tmpFirst!));
-    // StoreProvider.of<AppState>(context, listen: false)
-    // .dispatch(ChangeDirectoryAction(path, windowIndex));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    store = StoreProvider.of<AppState>(context, listen: false);
-    print("In InfoBar, directorybunch is ${directorybunch!.path}");
-    print("windowIndex is $windowIndex");
+    print("Navigating to $path");
+    // print("Window Index: $windowIndex");
+    // if (directorybunch == null) return;
     DirectoryBunch dirbunch;
-    print("From InfoBar, windowIndex is ${windowIndex}");
     if (windowIndex == 1) {
       dirbunch = store.state.firstBunch!;
     } else {
       dirbunch = store.state.secondBunch!;
     }
-    print("From store, dirbunch is ${dirbunch.path}");
+    // print("Current path: ${dirbunch.path}");
+    if (dirbunch.path == path) return;
+    // print("Navigate to $path");
+    store.dispatch(ChangeDirectoryAction(path, windowIndex));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    store = StoreProvider.of<AppState>(context, listen: false);
+    print("windowIndex is $windowIndex");
+    DirectoryBunch dirbunch;
+    if (windowIndex == 1) {
+      dirbunch = store.state.firstBunch!;
+    } else {
+      dirbunch = store.state.secondBunch!;
+    }
+    print("In Infobar, dirbunch is ${dirbunch.path}");
     // print("store is $store");
     String path = dirbunch.path;
 
@@ -147,8 +130,8 @@ class InfoBar extends StatelessWidget {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: chips,
             mainAxisAlignment: MainAxisAlignment.start,
+            children: chips,
           ),
         ),
       ),

@@ -6,6 +6,12 @@ AppState updateReducer(AppState state, action) {
     case UpdateCurrentViewAction:
       return state.copyWith(view: action.view);
     case UpdateMainViewCurrentTabAction:
+      print("UpdateMainViewCurrentTabAction reducer");
+      print("action.tab: ${action.tab}");
+      print("store.state.firstFiles: ${state.firstFiles}");
+      print("store.state.secondFiles: ${state.secondFiles}");
+      print("state is $state");
+      print("A kitkat break");
       return state.copyWith(tab: action.tab);
     case UpdateScreenSplitAction:
       return state.copyWith(split: action.isSplit);

@@ -124,7 +124,9 @@ class _StartViewState extends State<StartView> {
               final totalHeight = constraints.maxHeight;
               topChildHeight =
                   (totalHeight - _topInfoBarHeight - _draggableBarHeight) / 2;
-              bottomChildHeight = totalHeight - topChildHeight;
+              bottomChildHeight = totalHeight -
+                  _draggableTop -
+                  50; //Final subtraction is for the bottom nav
               return Stack(children: [
                 // This is the first child
                 Positioned(
@@ -136,17 +138,8 @@ class _StartViewState extends State<StartView> {
                     height: _topInfoBarHeight, // Standard AppBar height
                     child: store.state.firstBunch != null
                         ? InfoBar(
-                            directorybunch: store.state.firstBunch,
+                            // directorybunch: store.state.firstBunch,
                             windowIndex: 1,
-                            changeDirCallBack: (DirectoryBunch directoryBunch) {
-                              print(
-                                  "Navigating first window to ${directoryBunch.path} from start_view...");
-                              setState(() {
-                                directorybunchFirst = directoryBunch;
-                                store.dispatch(
-                                    UpdateDirectoryBunchFirst(directoryBunch));
-                              });
-                            },
                           )
                         : Container(),
                   ),
@@ -156,23 +149,15 @@ class _StartViewState extends State<StartView> {
                   right: 0,
                   top: _top + _topInfoBarHeight,
                   height: store.state.isSplit
-                      ? _draggableTop
+                      ? _draggableTop - 50
                       : totalHeight - _topInfoBarHeight,
                   child: store.state.firstBunch != null
                       ? FolderChildView(
-                          // directoryBunch: store.state.firstBunch,
                           windowIndex: 1,
-                          // onNavigate: (DirectoryBunch directoryBunch) {
-                          //   setState(() {
-                          //     print(
-                          //         "Navigating first window to ${directoryBunch.name} from start_view...");
-                          //     directorybunchFirst = directoryBunch;
-                          //   });
-                          // },
                         )
                       : Container(),
                 ),
-                // The following is the bar which can be used to partition the vertical space between the two children
+                // The following is the draggable bar which can be used to partition the vertical space between the two children
                 store.state.isSplit
                     ? Positioned(
                         top: _draggableTop,
@@ -199,16 +184,8 @@ class _StartViewState extends State<StartView> {
                                 _draggableBarHeight, // Standard AppBar height
                             child: Center(
                               child: InfoBar(
-                                directorybunch: store.state.secondBunch,
+                                // directorybunch: store.state.secondBunch,
                                 windowIndex: 2,
-                                changeDirCallBack:
-                                    (DirectoryBunch directoryBunch) {
-                                  setState(() {
-                                    print(
-                                        "Navigating second window to ${directoryBunch.name} from start_view...");
-                                    directorybunchSecond = directoryBunch;
-                                  });
-                                },
                               ),
                             ),
                           ),
@@ -222,25 +199,8 @@ class _StartViewState extends State<StartView> {
                         left: 0,
                         right: 0,
                         height: bottomChildHeight,
-                        child:
-                            //  directorybunchSecond == null
-                            //     ? FolderList(
-                            //         directories: directories,
-                            //         onClick: (DirectoryBunch directorybunch) {
-                            //           print("Clicked on ${directorybunch.name}");
-                            //           setState(() {
-                            //             directorybunchSecond = directorybunch;
-                            //           });
-                            //         })
-                            //     :
-                            FolderChildView(
-                          // directoryBunch: store.state.secondBunch,
+                        child: FolderChildView(
                           windowIndex: 2,
-                          // onNavigate: (DirectoryBunch directoryBunch) {
-                          //   setState(() {
-                          //     directorybunchFirst = directoryBunch;
-                          //   });
-                          // },
                         ),
                       )
                     : Container(),

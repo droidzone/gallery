@@ -37,9 +37,7 @@ class FolderChildView extends StatefulWidget {
 }
 
 class _FolderChildViewState extends State<FolderChildView> {
-  List<FileSystemEntity> _AllFiles = [];
   List<FileSystemEntity> _FilteredFiles = [];
-  final List<File> _selectedFiles = [];
   late Store<AppState> store;
   DirectoryBunch? directoryBunch;
 
@@ -95,10 +93,7 @@ class _FolderChildViewState extends State<FolderChildView> {
     print("Building file filter...");
     // print("Directory: ${directoryBunch!.path}");
     print("store is $store");
-    List<FileSystemEntity> files = [];
-    final Directory directory = Directory(
-        // store.
-        store.state.firstBunch!.path);
+    final Directory directory = Directory(store.state.firstBunch!.path);
 
     try {
       List<FileSystemEntity> tmpFiles = directory
@@ -106,21 +101,6 @@ class _FolderChildViewState extends State<FolderChildView> {
 
       print("Files: $tmpFiles");
       store.dispatch(UpdateFilesAction(tmpFiles, widget.windowIndex));
-
-      // for (var file in tmpFiles) {
-      //   if (file is File) {
-      //     print("$file is a file");
-      //   } else {
-      //     print("$file is not a file");
-      //   }
-      //   files.add(file);
-      // }
-      // setState(() {
-      //   // _AllFiles = tmpFiles;
-      //   // _FilteredFiles = tmpFiles;
-
-      // });
-      // Only after files are loaded successfully, shall we update the current path in state.
       return true;
     } on Exception catch (e) {
       print('An error occurred while accessing the directory: $e');
@@ -136,10 +116,20 @@ class _FolderChildViewState extends State<FolderChildView> {
     }
   }
 
-  bool _isMediaFile(String filePath) {
+  bool _isMediaFileOld(String filePath) {
     final RegExp regExp =
         RegExp(r"\.(gif|jpe?g|tiff?|png|webp|bmp|mp4)$", caseSensitive: false);
     return regExp.hasMatch(filePath);
+  }
+
+  bool isMediaFile(FileSystemEntity _file) {
+    if (_file is Directory) {
+      return false;
+    } else {
+      final RegExp regExp = RegExp(r"\.(gif|jpe?g|tiff?|png|webp|bmp|mp4)$",
+          caseSensitive: false);
+      return regExp.hasMatch(_file.path);
+    }
   }
 
   Future<void> loadFolder(BuildContext context, selectedFolder) async {
@@ -225,15 +215,12 @@ class _FolderChildViewState extends State<FolderChildView> {
     return fileName;
   }
 
-  void _longPressFile(index) {
-    print("Long pressed file");
-    print("Pressed file is ${_FilteredFiles[index]} index is $index");
-    print("store is $store");
+  void _longPressFile(_file) {
     setState(() {
-      if (store.state.selectedFiles!.contains(_FilteredFiles[index])) {
-        store.state.selectedFiles!.remove(_FilteredFiles[index] as File);
+      if (store.state.selectedFiles!.contains(_file)) {
+        store.state.selectedFiles!.remove(_file as File);
       } else {
-        store.state.selectedFiles!.add(_FilteredFiles[index] as File);
+        store.state.selectedFiles!.add(_file as File);
       }
     });
   }
@@ -259,26 +246,26 @@ class _FolderChildViewState extends State<FolderChildView> {
     return formattedDate;
   }
 
-  void _singleTapFile(context, index) {
+  void _singleTapFile(context, _file) {
     print("Tapped file");
     if (store.state.selectedFiles!.isNotEmpty) {
       setState(() {
-        if (store.state.selectedFiles!.contains(_FilteredFiles[index])) {
-          store.state.selectedFiles!.remove(_FilteredFiles[index] as File);
+        if (store.state.selectedFiles!.contains(_file)) {
+          store.state.selectedFiles!.remove(_file as File);
         } else {
-          store.state.selectedFiles!.add(_FilteredFiles[index] as File);
+          store.state.selectedFiles!.add(_file as File);
         }
       });
     } else {
-      String extension = p.extension(_FilteredFiles[index].path).toLowerCase();
+      String extension = p.extension(_file.path).toLowerCase();
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         if (extension == '.mp4') {
           return FullScreenVideoView(
-            videoPath: _FilteredFiles[index].path,
+            videoPath: _file.path,
           );
         } else {
           return FullScreenImageView(
-            imagePath: _FilteredFiles[index].path,
+            imagePath: _file.path,
           );
         }
       }));
@@ -289,20 +276,27 @@ class _FolderChildViewState extends State<FolderChildView> {
   Widget build(BuildContext context) {
     // print(
     //     "In FolderChildView build method, directoryBunch is ${directoryBunch!.path}");
-    print("store is $store");
+    // print("store is $store");
     return StoreConnector<AppState, Store>(
       converter: (store) => store,
       builder: (context, store) {
-        print(
-            "In FolderChildView build method, store is $store. It is rebuilding...");
-        List<FileSystemEntity> _files = widget.windowIndex == 1
+        // print(
+        //     "In FolderChildView build method, store is $store. It is rebuilding...");
+        List<FileSystemEntity> files = [];
+        List<FileSystemEntity> allfiles = widget.windowIndex == 1
             ? store.state.firstFiles
             : store.state.secondFiles;
-
+        List<FileSystemEntity> mediaFiles =
+            allfiles.where((file) => isMediaFile(file)).toList();
+        if (store.state.mainviewCurrentTab == "Media") {
+          files = mediaFiles;
+        } else {
+          files = allfiles;
+        }
         return Stack(
           children: [
             Scaffold(
-              body: _files.isEmpty
+              body: files.isEmpty
                   ? Center(
                       child: Text('No files found'),
                     )
@@ -322,18 +316,18 @@ class _FolderChildViewState extends State<FolderChildView> {
                               SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
                           ),
-                          itemCount: _files.length,
+                          itemCount: files.length,
                           itemBuilder: (context, index) {
-                            if (_isMediaFile(_files[index].path)) {
-                              print("Media File found");
+                            if (isMediaFile(files[index])) {
+                              // print("Media File found");
 
-                              String fileName = p.basename(_files[index].path);
+                              String fileName = p.basename(files[index].path);
                               return Container(
                                 margin: EdgeInsets.all(3),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10),
                                   color: store.state.selectedFiles!
-                                          .contains(_files[index])
+                                          .contains(files[index])
                                       ? Colors.green.withOpacity(0.3)
                                       : null,
                                 ),
@@ -353,16 +347,17 @@ class _FolderChildViewState extends State<FolderChildView> {
                                         ),
                                         child: InkWell(
                                           onLongPress: () {
-                                            _longPressFile(index);
+                                            _longPressFile(files[index]);
                                           },
                                           onTap: () {
-                                            _singleTapFile(context, index);
+                                            _singleTapFile(
+                                                context, files[index]);
                                           },
                                           child: Stack(
                                             children: [
                                               FutureBuilder(
                                                 future: _getThumbnail(
-                                                    _files[index].path),
+                                                    files[index].path),
                                                 builder: (BuildContext context,
                                                     AsyncSnapshot<Uint8List>
                                                         snapshot) {
@@ -389,7 +384,7 @@ class _FolderChildViewState extends State<FolderChildView> {
                                                     children: [
                                                       Text(
                                                         _formattedDD(
-                                                            _files[index]),
+                                                            files[index]),
                                                         style: TextStyle(
                                                           color: Colors.black,
                                                           fontSize: 12,
@@ -397,7 +392,7 @@ class _FolderChildViewState extends State<FolderChildView> {
                                                       ),
                                                       Text(
                                                         _formattedMonth(
-                                                            _files[index]),
+                                                            files[index]),
                                                         style: TextStyle(
                                                           color: Colors.black,
                                                           fontSize: 12,
@@ -424,18 +419,17 @@ class _FolderChildViewState extends State<FolderChildView> {
                                   ],
                                 ),
                               );
-                            } else if (_files[index] is Directory &&
-                                store.state.mainviewCurrentTab == 'Folders') {
-                              print("Directory found: ${_files[index]}");
-                              print("currentview: ${store.state.currentView}");
+                            } else {
+                              // print("Directory found: ${_files[index]}");
+                              // print("currentview: ${store.state.currentView}");
                               //  &&
                               //   store.state.currentView == 'Folders'
-                              String dirName = p.basename(_files[index].path);
+                              String dirName = p.basename(files[index].path);
                               return InkWell(
                                 onTap: () async {
                                   // loadFolder(context, _AllFiles[index]);
                                   store.dispatch(ChangeDirectoryAction(
-                                      _files[index].path, widget.windowIndex));
+                                      files[index].path, widget.windowIndex));
                                 },
                                 child: Column(
                                   children: <Widget>[
@@ -455,11 +449,12 @@ class _FolderChildViewState extends State<FolderChildView> {
                                   ],
                                 ),
                               );
-                            } else {
-                              print(
-                                  "Found non media file: ${_files[index]}, or view is set to Gallery and directories are being hidden. Not displaying");
-                              return Container();
                             }
+                            // else {
+                            //   print(
+                            //       "Found non media file: ${_files[index]}, or view is set to Gallery and directories are being hidden. Not displaying");
+                            //   return Container();
+                            // }
                           },
                         ),
                       ),

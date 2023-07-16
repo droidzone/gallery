@@ -16,8 +16,8 @@ class AppState {
   String? currentDirectorySecond;
   DirectoryBunch? firstBunch;
   DirectoryBunch? secondBunch;
-  List<FileSystemEntity> firstFiles;
-  List<FileSystemEntity> secondFiles;
+  List<FileSystemEntity>? firstFiles;
+  List<FileSystemEntity>? secondFiles;
 
   AppState({
     this.currentView,
@@ -33,8 +33,8 @@ class AppState {
     this.currentDirectorySecond,
     this.firstBunch,
     this.secondBunch,
-    this.firstFiles = const [],
-    this.secondFiles = const [],
+    this.firstFiles,
+    this.secondFiles,
   });
 
   AppState copyWith({
@@ -50,9 +50,10 @@ class AppState {
     String? currentDirSecond,
     DirectoryBunch? bunchFirst,
     DirectoryBunch? bunchSecond,
-    List<FileSystemEntity> filesFirst = const [],
-    List<FileSystemEntity> filesSecond = const [],
+    List<FileSystemEntity>? filesFirst,
+    List<FileSystemEntity>? filesSecond,
   }) {
+    // print("Before copyWith, current firstFiles is $firstFiles");
     return AppState(
       currentView: view ?? currentView,
       mainviewCurrentTab: tab ?? mainviewCurrentTab,
@@ -67,8 +68,8 @@ class AppState {
       currentDirectorySecond: currentDirSecond ?? currentDirectorySecond,
       firstBunch: bunchFirst ?? firstBunch,
       secondBunch: bunchSecond ?? secondBunch,
-      firstFiles: filesFirst,
-      secondFiles: filesSecond,
+      firstFiles: filesFirst != null ? List.from(filesFirst) : firstFiles,
+      secondFiles: filesSecond != null ? List.from(filesSecond) : secondFiles,
     );
   }
 }
