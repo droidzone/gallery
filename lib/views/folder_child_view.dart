@@ -8,16 +8,18 @@ import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/views/picture_view.dart';
 import 'package:gallery/views/video_view.dart';
 
-import 'package:intl/intl.dart';
-
 import 'dart:io';
 
 import 'package:gallery/structure/directory_bunch.dart';
+import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path/path.dart' as p;
 import 'package:redux/redux.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery/helpers/utils.dart';
+
+final Logger _log = Logger('FolderChildView');
 
 class FolderChildView extends StatefulWidget {
   FolderChildView({
@@ -30,7 +32,7 @@ class FolderChildView extends StatefulWidget {
   // Function onNavigate;
   // final DirectoryBunch directoryBunch;
   // final Function onPaste;
-  int windowIndex;
+  final int windowIndex;
 
   @override
   State<FolderChildView> createState() => _FolderChildViewState();
@@ -40,6 +42,7 @@ class _FolderChildViewState extends State<FolderChildView> {
   List<FileSystemEntity> _FilteredFiles = [];
   late Store<AppState> store;
   DirectoryBunch? directoryBunch;
+  final Logger _log = Logger('FolderChildView');
 
   @override
   void initState() {
@@ -55,25 +58,25 @@ class _FolderChildViewState extends State<FolderChildView> {
   }
 
   Future requestPermission(Permission permission) async {
-    print("Requesting permission: $permission");
+    _log.info("Requesting permission: $permission");
     PermissionStatus status = await permission.status;
-    print("Permission status: $status");
+    _log.info("Permission status: $status");
 
     if (status.isPermanentlyDenied) {
-      print("Permission is permanently denied");
+      _log.info("Permission is permanently denied");
       // The user opted to never again see the permission request dialog for this
       // app. The only way to change the permission's status now is to let the
       // user manually enable it in the system settings.
       openAppSettings();
     } else if (status.isDenied) {
-      print("Permission is denied");
+      _log.info("Permission is denied");
       // The user did not grant the permission.
       // You can display the permission dialog again and ask the user for
       // permission.
       status = await permission.request();
-      print("Permission status on requesting again: $status");
+      _log.info("Permission status on requesting again: $status");
     } else {
-      print("Permission is not permanently denied");
+      _log.info("Permission is not permanently denied");
       // You can request the permission again.
       status = await permission.request();
     }
@@ -81,29 +84,29 @@ class _FolderChildViewState extends State<FolderChildView> {
 
   void updateState(DirectoryBunch _newBunch) {
     if (widget.windowIndex == 1) {
-      print("We are in the first window");
+      _log.info("We are in the first window");
       store.dispatch(UpdateDirectoryBunchFirst(_newBunch));
     } else {
-      print("We are in the second window");
+      _log.info("We are in the second window");
       store.dispatch(UpdateDirectoryBunchSecond(_newBunch));
     }
   }
 
   Future<bool> _buildFileFilter() async {
-    print("Building file filter...");
-    // print("Directory: ${directoryBunch!.path}");
-    print("store is $store");
+    _log.info("Building file filter...");
+    // _log.info("Directory: ${directoryBunch!.path}");
+    _log.info("store is $store");
     final Directory directory = Directory(store.state.firstBunch!.path);
 
     try {
       List<FileSystemEntity> tmpFiles = directory
           .listSync(); //At this point, we might get a Unhandled Exception: PathAccessException: Directory listing failed, path = '/storage/emulated/0/Android/data/' (OS Error: Permission denied, errno = 13) We need to handle it with try catch. If there is an error, display a toast message to the user that the app needs permission to access the files.
 
-      print("Files: $tmpFiles");
+      _log.info("Files: $tmpFiles");
       store.dispatch(UpdateFilesAction(tmpFiles, widget.windowIndex));
       return true;
     } on Exception catch (e) {
-      print('An error occurred while accessing the directory: $e');
+      _log.info('An error occurred while accessing the directory: $e');
       Fluttertoast.showToast(
           msg: "No permission to access this directory!",
           toastLength: Toast.LENGTH_LONG,
@@ -116,35 +119,19 @@ class _FolderChildViewState extends State<FolderChildView> {
     }
   }
 
-  bool _isMediaFileOld(String filePath) {
-    final RegExp regExp =
-        RegExp(r"\.(gif|jpe?g|tiff?|png|webp|bmp|mp4)$", caseSensitive: false);
-    return regExp.hasMatch(filePath);
-  }
-
-  bool isMediaFile(FileSystemEntity _file) {
-    if (_file is Directory) {
-      return false;
-    } else {
-      final RegExp regExp = RegExp(r"\.(gif|jpe?g|tiff?|png|webp|bmp|mp4)$",
-          caseSensitive: false);
-      return regExp.hasMatch(_file.path);
-    }
-  }
-
   Future<void> loadFolder(BuildContext context, selectedFolder) async {
-    print("In FolderChildView: Loading folder: $selectedFolder");
+    _log.info("In FolderChildView: Loading folder: $selectedFolder");
 
     // This line brings prewiew image of the folder, but is performance heavy
     // List<FileSystemEntity> files =
     //     await Directory(selectedFolder.path).list().toList();
-    // print("Files: $files No: ${files.length}");
+    // _log.info("Files: $files No: ${files.length}");
 
     String dirName = p.basename(selectedFolder.path);
 
     // if is split, refresh the dir location without navigating to it
     // if (store.state.isSplit!) {
-    // print("We are in a split view");
+    // _log.info("We are in a split view");
     DirectoryBunch _newBunch = DirectoryBunch(
       path: selectedFolder.path,
       name: dirName,
@@ -215,72 +202,64 @@ class _FolderChildViewState extends State<FolderChildView> {
     return fileName;
   }
 
-  void _longPressFile(_file) {
-    setState(() {
-      if (store.state.selectedFiles!.contains(_file)) {
-        store.state.selectedFiles!.remove(_file as File);
-      } else {
-        store.state.selectedFiles!.add(_file as File);
-      }
-    });
-  }
-
-  String _formattedDate(_file) {
-    DateTime modificationDate = _file.statSync().modified;
-
-    String formattedDate = DateFormat('dd-MM-yyyy').format(modificationDate);
-    return formattedDate;
-  }
-
-  String _formattedDD(_file) {
-    DateTime modificationDate = _file.statSync().modified;
-
-    String formattedDate = DateFormat('dd').format(modificationDate);
-    return formattedDate;
-  }
-
-  String _formattedMonth(_file) {
-    DateTime modificationDate = _file.statSync().modified;
-
-    String formattedDate = DateFormat('MMM').format(modificationDate);
-    return formattedDate;
+  void _longPressFile(file) {
+    _log.info("Handling long press");
+    store.dispatch(SelectFileAction(file, widget.windowIndex));
+    // setState(() {
+    //   if (store.state.selectedFiles!.contains(_file)) {
+    //     store.state.selectedFiles!.remove(_file as File);
+    //   } else {
+    //     store.state.selectedFiles!.add(_file as File);
+    //   }
+    // });
   }
 
   void _singleTapFile(context, _file) {
-    print("Tapped file");
-    if (store.state.selectedFiles!.isNotEmpty) {
-      setState(() {
-        if (store.state.selectedFiles!.contains(_file)) {
-          store.state.selectedFiles!.remove(_file as File);
-        } else {
-          store.state.selectedFiles!.add(_file as File);
-        }
-      });
+    _log.info("Tapped file");
+    if (widget.windowIndex == 1) {
+      _log.info("We are in the first window");
+      if (store.state.selectedFilesFirst!.isNotEmpty) {
+        store.dispatch(SelectFileAction(_file, widget.windowIndex));
+        return;
+      }
     } else {
-      String extension = p.extension(_file.path).toLowerCase();
-      Navigator.push(context, MaterialPageRoute(builder: (context) {
-        if (extension == '.mp4') {
-          return FullScreenVideoView(
-            videoPath: _file.path,
-          );
-        } else {
-          return FullScreenImageView(
-            imagePath: _file.path,
-          );
-        }
-      }));
+      _log.info("We are in the second window");
+      if (store.state.selectedFilesSecond!.isNotEmpty) {
+        store.dispatch(SelectFileAction(_file, widget.windowIndex));
+        return;
+      }
+    }
+    String extension = p.extension(_file.path).toLowerCase();
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      if (extension == '.mp4') {
+        return FullScreenVideoView(
+          videoPath: _file.path,
+        );
+      } else {
+        return FullScreenImageView(
+          imagePath: _file.path,
+        );
+      }
+    }));
+  }
+
+  bool isFileSelected(FileSystemEntity file) {
+    if (widget.windowIndex == 1) {
+      return store.state.selectedFilesFirst!.contains(file);
+    } else {
+      return store.state.selectedFilesSecond!.contains(file);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // print(
+    // _log.info(
     //     "In FolderChildView build method, directoryBunch is ${directoryBunch!.path}");
-    // print("store is $store");
+    // _log.info("store is $store");
     return StoreConnector<AppState, Store>(
       converter: (store) => store,
       builder: (context, store) {
-        // print(
+        // _log.info(
         //     "In FolderChildView build method, store is $store. It is rebuilding...");
         List<FileSystemEntity> files = [];
         List<FileSystemEntity> allfiles = widget.windowIndex == 1
@@ -309,9 +288,10 @@ class _FolderChildViewState extends State<FolderChildView> {
                         color: store.state.isSplit &&
                                 widget.windowIndex ==
                                     store.state.activeChildWindow
-                            ? Colors.blue[50]
+                            ? Colors.lime[50]
                             : Colors.white,
                         child: GridView.builder(
+                          padding: EdgeInsets.only(bottom: 50, top: 20),
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 3,
@@ -319,15 +299,14 @@ class _FolderChildViewState extends State<FolderChildView> {
                           itemCount: files.length,
                           itemBuilder: (context, index) {
                             if (isMediaFile(files[index])) {
-                              // print("Media File found");
+                              // _log.info("Media File found");
 
                               String fileName = p.basename(files[index].path);
                               return Container(
                                 margin: EdgeInsets.all(3),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10),
-                                  color: store.state.selectedFiles!
-                                          .contains(files[index])
+                                  color: isFileSelected(files[index])
                                       ? Colors.green.withOpacity(0.3)
                                       : null,
                                 ),
@@ -383,7 +362,7 @@ class _FolderChildViewState extends State<FolderChildView> {
                                                   child: Column(
                                                     children: [
                                                       Text(
-                                                        _formattedDD(
+                                                        formattedDD(
                                                             files[index]),
                                                         style: TextStyle(
                                                           color: Colors.black,
@@ -391,7 +370,7 @@ class _FolderChildViewState extends State<FolderChildView> {
                                                         ),
                                                       ),
                                                       Text(
-                                                        _formattedMonth(
+                                                        formattedMonth(
                                                             files[index]),
                                                         style: TextStyle(
                                                           color: Colors.black,
@@ -420,8 +399,8 @@ class _FolderChildViewState extends State<FolderChildView> {
                                 ),
                               );
                             } else {
-                              // print("Directory found: ${_files[index]}");
-                              // print("currentview: ${store.state.currentView}");
+                              // _log.info("Directory found: ${_files[index]}");
+                              // _log.info("currentview: ${store.state.currentView}");
                               //  &&
                               //   store.state.currentView == 'Folders'
                               String dirName = p.basename(files[index].path);
@@ -450,11 +429,6 @@ class _FolderChildViewState extends State<FolderChildView> {
                                 ),
                               );
                             }
-                            // else {
-                            //   print(
-                            //       "Found non media file: ${_files[index]}, or view is set to Gallery and directories are being hidden. Not displaying");
-                            //   return Container();
-                            // }
                           },
                         ),
                       ),

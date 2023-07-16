@@ -65,3 +65,25 @@ class ChangeDirectoryAction {
   final int windowIndex;
   ChangeDirectoryAction(this.path, this.windowIndex);
 }
+
+class CopyFilesToClipBoardyAction {
+  final List<FileSystemEntity> files;
+  int windowIndex;
+  CopyFilesToClipBoardyAction(this.files, this.windowIndex);
+}
+
+class SelectFileAction {
+  final FileSystemEntity file;
+  final int windowIndex;
+  SelectFileAction(this.file, this.windowIndex);
+}
+
+class DeSelectFileAction {
+  final FileSystemEntity file;
+  final int windowIndex;
+  DeSelectFileAction(this.file, this.windowIndex);
+}
+
+class CopyFilesToClipBoardAction {
+  CopyFilesToClipBoardAction();
+}

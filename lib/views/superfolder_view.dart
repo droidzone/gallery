@@ -45,7 +45,7 @@ class _SuperFolderViewState extends State<SuperFolderView> {
   void pasteFiles() {
     print("Paste files");
     // print("Received files from child: $_selected");
-    print("Files in memory include: ${store.state.selectedFiles}");
+    // print("Files in memory include: ${store.state.selectedFiles}");
   }
 
   @override

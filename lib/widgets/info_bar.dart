@@ -6,7 +6,10 @@ import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/structure/directory_chip.dart';
+import 'package:logging/logging.dart';
 import 'package:redux/redux.dart';
+
+final Logger _log = Logger('InfoBar');
 
 class InfoBar extends StatelessWidget {
   InfoBar({
@@ -19,8 +22,8 @@ class InfoBar extends StatelessWidget {
   late Store<AppState> store;
 
   void NavigateTo(path) async {
-    print("Navigating to $path");
-    // print("Window Index: $windowIndex");
+    _log.info("Navigating to $path");
+    // _log.info("Window Index: $windowIndex");
     // if (directorybunch == null) return;
     DirectoryBunch dirbunch;
     if (windowIndex == 1) {
@@ -28,24 +31,23 @@ class InfoBar extends StatelessWidget {
     } else {
       dirbunch = store.state.secondBunch!;
     }
-    // print("Current path: ${dirbunch.path}");
+    // _log.info("Current path: ${dirbunch.path}");
     if (dirbunch.path == path) return;
-    // print("Navigate to $path");
+    // _log.info("Navigate to $path");
     store.dispatch(ChangeDirectoryAction(path, windowIndex));
   }
 
   @override
   Widget build(BuildContext context) {
     store = StoreProvider.of<AppState>(context, listen: false);
-    print("windowIndex is $windowIndex");
     DirectoryBunch dirbunch;
     if (windowIndex == 1) {
       dirbunch = store.state.firstBunch!;
     } else {
       dirbunch = store.state.secondBunch!;
     }
-    print("In Infobar, dirbunch is ${dirbunch.path}");
-    // print("store is $store");
+    _log.info("windowIndex: $windowIndex dirbunch:${dirbunch.path}");
+    // _log.info("store is $store");
     String path = dirbunch.path;
 
     // directorybunch != null ? directorybunch!.path : "/storage/emulated/0";
@@ -60,7 +62,7 @@ class InfoBar extends StatelessWidget {
       chips.add(
         IconButton(
           onPressed: () {
-            print('InfoBar: Directory Path: /storage/emulated/0');
+            _log.info('InfoBar: Directory Path: /storage/emulated/0');
             NavigateTo("/storage/emulated/0");
           },
           icon: Icon(

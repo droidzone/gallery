@@ -5,10 +5,16 @@ import 'package:gallery/stores/appstate.middleware.dart';
 import 'package:gallery/stores/initial_state.dart';
 import 'package:gallery/stores/reducer.dart';
 import 'package:gallery/views/start_view.dart';
+import 'package:logging/logging.dart';
 import 'package:redux/redux.dart';
-import 'package:redux_dev_tools/redux_dev_tools.dart';
 
 Future<void> main() async {
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    // print(
+    //     '${record.level.name}: ${record.time}: ${record.loggerName}: ${record.message}');
+    print('Gallery: ${record.loggerName}: ${record.message}');
+  });
   WidgetsFlutterBinding.ensureInitialized();
 
   final store = Store<AppState>(

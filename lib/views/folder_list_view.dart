@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:gallery/structure/directory_bunch.dart';
-import 'package:gallery/views/superfolder_view.dart';
 
 class FolderList extends StatelessWidget {
   FolderList({

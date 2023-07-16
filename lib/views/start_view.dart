@@ -9,12 +9,14 @@ import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/views/folder_child_view.dart';
-import 'package:gallery/views/folder_list_view.dart';
 import 'package:gallery/widgets/bottom_nav_bar.dart';
 import 'package:gallery/widgets/info_bar.dart';
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:redux/redux.dart';
+
+final Logger _log = Logger('StartView');
 
 class StartView extends StatefulWidget {
   StartView({Key? key}) : super(key: key);
@@ -60,17 +62,17 @@ class _StartViewState extends State<StartView> {
   void _listMediaDirectories() async {
     await getRequiredPermissions(widget.requiredPermissions);
     Directory? dir = await getExternalStorageDirectory();
-    print("App Storage Directory: $dir");
-    String path = "${dir!.path.split("Android")[0]}";
-    print("Internal Storage Directory: $path");
+    _log.info("App Storage Directory: $dir");
+    String path = '${dir!.path.split("Android")[0]}';
+    _log.info("Internal Storage Directory: $path");
     // List directories in path
     List<FileSystemEntity> files = await Directory(path).list().toList();
-    print("No of directories found in $path: ${files.length}");
+    _log.info("No of directories found in $path: ${files.length}");
     List<DirectoryBunch> tmpDirectoryList = [];
     for (FileSystemEntity file in files) {
       if (file is Directory) {
         String name = file.path.split("/").last;
-        print("Directory name: $name");
+        _log.info("Directory name: $name");
         // if (widget.mediaDirectories.contains(name)) {
         tmpDirectoryList.add(DirectoryBunch(
           path: file.path,
@@ -80,20 +82,25 @@ class _StartViewState extends State<StartView> {
         // }
       }
     }
-    DirectoryBunch _tmpFirst = DirectoryBunch(
+    DirectoryBunch tmpFirst = DirectoryBunch(
       path: path,
       name: "Internal Storage",
       imgPath: null,
     );
-    print("Setting starting directory to ${_tmpFirst.name}");
-    await store.dispatch(UpdateDirectoryBunchFirst(_tmpFirst!));
-    await store.dispatch(UpdateDirectoryBunchSecond(_tmpFirst!));
+    _log.info("Setting starting directory to ${tmpFirst.name}");
+    await store.dispatch(UpdateDirectoryBunchFirst(tmpFirst));
+    await store.dispatch(UpdateDirectoryBunchSecond(tmpFirst));
 
     setState(() {
       directories = tmpDirectoryList;
-      directorybunchFirst = _tmpFirst;
+      directorybunchFirst = tmpFirst;
       directorybunchSecond = directorybunchFirst;
     });
+  }
+
+  void _copyFilesToClipBoard() {
+    _log.info("Copying files to clipboard");
+    store.dispatch(CopyFilesToClipBoardAction());
   }
 
   @override
@@ -103,18 +110,32 @@ class _StartViewState extends State<StartView> {
       builder: (context, store) {
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            title: const Text('Super Gallery'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            title: const Text(
+              'Super Gallery',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
             actions: [
               IconButton(
+                  onPressed: () {
+                    _copyFilesToClipBoard();
+                  },
+                  icon: Icon(
+                    Icons.file_copy_sharp,
+                    color: Theme.of(context).colorScheme.inversePrimary,
+                  )),
+              IconButton(
                 onPressed: () {
-                  print("Pressed split screen");
+                  _log.info("Pressed split screen");
                   store.dispatch(UpdateScreenSplitAction(!store.state.isSplit));
                 },
                 icon: Icon(
                   store.state.isSplit != true
                       ? Icons.splitscreen_outlined
                       : Icons.splitscreen,
+                  color: Theme.of(context).colorScheme.inversePrimary,
                 ),
               ),
             ],
@@ -168,11 +189,11 @@ class _StartViewState extends State<StartView> {
                             setState(() {
                               double delta = details.delta.dy;
                               _draggableTop += delta;
-                              print("\nDrag update details: Delta: ${delta}");
-                              print(
-                                  "_draggableTop: $_draggableTop firstchild height:${totalHeight - _topInfoBarHeight + _draggableTop}");
-                              print(
-                                  "Infobar bottom: ${_top + _topInfoBarHeight}");
+                              // _log.info("\nDrag update details: Delta: $delta");
+                              // _log.info(
+                              //     "_draggableTop: $_draggableTop firstchild height:${totalHeight - _topInfoBarHeight + _draggableTop}");
+                              // _log.info(
+                              //     "Infobar bottom: ${_top + _topInfoBarHeight}");
                               if (_draggableTop < (_top + _topInfoBarHeight)) {
                                 _draggableTop = _top + _topInfoBarHeight;
                               }

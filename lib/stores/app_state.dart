@@ -8,7 +8,8 @@ class AppState {
   String? mainviewCurrentTab;
   String? viewFolderAs;
   bool? isSplit;
-  List<File>? selectedFiles;
+  List<FileSystemEntity>? selectedFilesFirst;
+  List<FileSystemEntity>? selectedFilesSecond;
   List<File>? filteredFiles;
   int? activeChildWindow;
   String? selectedPath;
@@ -18,6 +19,8 @@ class AppState {
   DirectoryBunch? secondBunch;
   List<FileSystemEntity>? firstFiles;
   List<FileSystemEntity>? secondFiles;
+  List<FileSystemEntity>? clipboardFirst;
+  List<FileSystemEntity>? clipboardSecond;
 
   AppState({
     this.currentView,
@@ -25,7 +28,8 @@ class AppState {
     this.mainviewCurrentTab,
     this.viewFolderAs,
     this.isSplit,
-    this.selectedFiles,
+    this.selectedFilesFirst,
+    this.selectedFilesSecond,
     this.filteredFiles,
     this.activeChildWindow,
     this.selectedPath,
@@ -35,6 +39,8 @@ class AppState {
     this.secondBunch,
     this.firstFiles,
     this.secondFiles,
+    this.clipboardFirst,
+    this.clipboardSecond,
   });
 
   AppState copyWith({
@@ -52,6 +58,10 @@ class AppState {
     DirectoryBunch? bunchSecond,
     List<FileSystemEntity>? filesFirst,
     List<FileSystemEntity>? filesSecond,
+    List<FileSystemEntity>? filesCopiedForFirst,
+    List<FileSystemEntity>? filesCopiedForSecond,
+    List<FileSystemEntity>? selectedFirst,
+    List<FileSystemEntity>? selectedSecond,
   }) {
     // print("Before copyWith, current firstFiles is $firstFiles");
     return AppState(
@@ -60,7 +70,8 @@ class AppState {
       mainviewDefaultTab: tab ?? mainviewDefaultTab,
       viewFolderAs: folderViewType ?? viewFolderAs,
       isSplit: split ?? isSplit,
-      selectedFiles: selected ?? selectedFiles,
+      selectedFilesFirst: selectedFirst ?? selectedFilesFirst,
+      selectedFilesSecond: selectedSecond ?? selectedFilesSecond,
       filteredFiles: filtered ?? filteredFiles,
       activeChildWindow: childWindowSelected ?? activeChildWindow,
       selectedPath: pathSelected ?? selectedPath,
@@ -70,6 +81,8 @@ class AppState {
       secondBunch: bunchSecond ?? secondBunch,
       firstFiles: filesFirst != null ? List.from(filesFirst) : firstFiles,
       secondFiles: filesSecond != null ? List.from(filesSecond) : secondFiles,
+      clipboardFirst: filesCopiedForFirst ?? clipboardFirst,
+      clipboardSecond: filesCopiedForSecond ?? clipboardSecond,
     );
   }
 }
