@@ -214,6 +214,13 @@ class _FolderChildViewState extends State<FolderChildView> {
     // });
   }
 
+  void _changeDirectory(directory) {
+    _log.info("Changing directory");
+    store.dispatch(ChangeDirectoryAction(directory.path, widget.windowIndex));
+    // Also remove files selected, but not from clipboard
+    store.dispatch(DeSelectAllFilesForWindowAction(widget.windowIndex));
+  }
+
   void _singleTapFile(context, _file) {
     _log.info("Tapped file");
     if (widget.windowIndex == 1) {
@@ -399,16 +406,10 @@ class _FolderChildViewState extends State<FolderChildView> {
                                 ),
                               );
                             } else {
-                              // _log.info("Directory found: ${_files[index]}");
-                              // _log.info("currentview: ${store.state.currentView}");
-                              //  &&
-                              //   store.state.currentView == 'Folders'
                               String dirName = p.basename(files[index].path);
                               return InkWell(
                                 onTap: () async {
-                                  // loadFolder(context, _AllFiles[index]);
-                                  store.dispatch(ChangeDirectoryAction(
-                                      files[index].path, widget.windowIndex));
+                                  _changeDirectory(files[index]);
                                 },
                                 child: Column(
                                   children: <Widget>[

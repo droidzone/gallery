@@ -35,6 +35,8 @@ class InfoBar extends StatelessWidget {
     if (dirbunch.path == path) return;
     // _log.info("Navigate to $path");
     store.dispatch(ChangeDirectoryAction(path, windowIndex));
+    // Also remove files selected, but not from clipboard
+    store.dispatch(DeSelectAllFilesForWindowAction(windowIndex));
   }
 
   bool _clipboardIsLoaded() {

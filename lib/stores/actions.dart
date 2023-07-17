@@ -84,6 +84,11 @@ class DeSelectFileAction {
   DeSelectFileAction(this.file, this.windowIndex);
 }
 
+class DeSelectAllFilesForWindowAction {
+  final int windowIndex;
+  DeSelectAllFilesForWindowAction(this.windowIndex);
+}
+
 class RemoveFileFromClipBoardAction {
   final FileSystemEntity file;
   final int windowIndex;

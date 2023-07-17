@@ -60,9 +60,22 @@ AppState updateReducer(AppState state, action) {
       return handleCopyFilesToClipboardAction(state, action);
     case RemoveFileFromClipBoardAction:
       return handleRemoveFileFromClipboardAction(state, action);
-    // case DeleteSelectedFilesAction:
-    //   return handleDeleteSelectedFiles(state, action);
+    case DeSelectAllFilesForWindowAction:
+      return handleDeSelectAllFilesForWindowAction(state, action);
   }
+  return state;
+}
+
+AppState handleDeSelectAllFilesForWindowAction(AppState state, action) {
+  _log.info("DeSelectAllFilesForWindowAction reducer");
+  _log.info("action.windowIndex: ${action.windowIndex}");
+
+  if (action.windowIndex == 1) {
+    return state.copyWith(selectedFirst: []);
+  } else if (action.windowIndex == 2) {
+    return state.copyWith(selectedSecond: []);
+  }
+  _log.info("state is $state");
   return state;
 }
 
