@@ -66,7 +66,7 @@ class _StartViewState extends State<StartView> {
     await getRequiredPermissions(widget.requiredPermissions);
     Directory? dir = await getExternalStorageDirectory();
     _log.info("App Storage Directory: $dir");
-    String path = '${dir!.path.split("Android")[0]}';
+    String path = dir!.path.split("Android")[0];
     _log.info("Internal Storage Directory: $path");
     // List directories in path
     List<FileSystemEntity> files = await Directory(path).list().toList();

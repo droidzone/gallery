@@ -109,19 +109,20 @@ void loadFilesMiddleware(
     }
     _log.info("state: ${store.state}");
   } else if (action is DeleteSelectedFilesAction) {
-    _log.info("DeleteSelectedFiles reducer");
+    _log.info("DeleteSelectedFiles..");
     int index = store.state.activeChildWindow!;
     _log.info("index: ${index}");
     List<FileSystemEntity> files = (index == 1)
-        ? List.from(store.state.clipboardFirst!)
-        : List.from(store.state.clipboardSecond!);
+        ? List.from(store.state.selectedFilesFirst!)
+        : List.from(store.state.selectedFilesSecond!);
     _log.info("files: $files");
     files.forEach((element) {
-      element.deleteSync(recursive: true);
       _log.info("Deleting file: $element");
-      if (index == 1) {
+      element.deleteSync(recursive: true);
+      _log.info("Deleted file: $element");
+      if (store.state.activeChildWindow == 1) {
         store.state.selectedFilesFirst!.remove(element);
-      } else if (index == 2) {
+      } else if (store.state.activeChildWindow == 2) {
         store.state.selectedFilesSecond!.remove(element);
       }
     });
