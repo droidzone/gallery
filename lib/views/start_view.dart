@@ -76,7 +76,6 @@ class _StartViewState extends State<StartView> {
       if (file is Directory) {
         String name = file.path.split("/").last;
         _log.info("Directory name: $name");
-        // if (widget.mediaDirectories.contains(name)) {
         tmpDirectoryList.add(DirectoryBunch(
           path: file.path,
           name: name,
@@ -139,9 +138,6 @@ class _StartViewState extends State<StartView> {
       targetPath = store.state.secondBunch!.path;
     }
     store.dispatch(LoadFilesAction(targetPath, store.state.activeChildWindow!));
-
-    // show a dialog to confirm that the user wants to paste the files
-    // Give me dart code to display dialog
   }
 
   @override
@@ -364,7 +360,6 @@ class _StartViewState extends State<StartView> {
                     height: _topInfoBarHeight, // Standard AppBar height
                     child: store.state.firstBunch != null
                         ? InfoBar(
-                            // directorybunch: store.state.firstBunch,
                             windowIndex: 1,
                           )
                         : Container(),
@@ -383,7 +378,6 @@ class _StartViewState extends State<StartView> {
                         )
                       : Container(),
                 ),
-                // The following is the draggable bar which can be used to partition the vertical space between the two children
                 store.state.isSplit
                     ? Positioned(
                         top: _draggableTop,
@@ -394,11 +388,6 @@ class _StartViewState extends State<StartView> {
                             setState(() {
                               double delta = details.delta.dy;
                               _draggableTop += delta;
-                              // _log.info("\nDrag update details: Delta: $delta");
-                              // _log.info(
-                              //     "_draggableTop: $_draggableTop firstchild height:${totalHeight - _topInfoBarHeight + _draggableTop}");
-                              // _log.info(
-                              //     "Infobar bottom: ${_top + _topInfoBarHeight}");
                               if (_draggableTop < (_top + _topInfoBarHeight)) {
                                 _draggableTop = _top + _topInfoBarHeight;
                               }
@@ -410,7 +399,6 @@ class _StartViewState extends State<StartView> {
                                 _draggableBarHeight, // Standard AppBar height
                             child: Center(
                               child: InfoBar(
-                                // directorybunch: store.state.secondBunch,
                                 windowIndex: 2,
                               ),
                             ),

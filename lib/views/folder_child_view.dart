@@ -11,7 +11,9 @@ import 'package:gallery/views/video_view.dart';
 import 'dart:io';
 
 import 'package:gallery/structure/directory_bunch.dart';
+import 'package:gallery/widgets/directory_widget.dart';
 import 'package:gallery/widgets/file_thumbnail_widget.dart';
+import 'package:gallery/widgets/file_widget.dart';
 import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -25,14 +27,8 @@ final Logger _log = Logger('FolderChildView');
 class FolderChildView extends StatefulWidget {
   FolderChildView({
     Key? key,
-    // required this.directoryBunch,
     required this.windowIndex,
-    // required this.onNavigate,
-    // required this.onPaste,
   }) : super(key: key);
-  // Function onNavigate;
-  // final DirectoryBunch directoryBunch;
-  // final Function onPaste;
   final int windowIndex;
 
   @override
@@ -44,11 +40,11 @@ class _FolderChildViewState extends State<FolderChildView> {
   late Store<AppState> store;
   DirectoryBunch? directoryBunch;
   final Logger _log = Logger('FolderChildView');
+  List<FileSystemEntity> selectedFiles = [];
 
   @override
   void initState() {
     super.initState();
-    // directoryBunch = widget.directoryBunch;
   }
 
   @override
@@ -56,31 +52,6 @@ class _FolderChildViewState extends State<FolderChildView> {
     super.didChangeDependencies();
     store = StoreProvider.of<AppState>(context, listen: false);
     _buildFileFilter();
-  }
-
-  Future requestPermission(Permission permission) async {
-    _log.info("Requesting permission: $permission");
-    PermissionStatus status = await permission.status;
-    _log.info("Permission status: $status");
-
-    if (status.isPermanentlyDenied) {
-      _log.info("Permission is permanently denied");
-      // The user opted to never again see the permission request dialog for this
-      // app. The only way to change the permission's status now is to let the
-      // user manually enable it in the system settings.
-      openAppSettings();
-    } else if (status.isDenied) {
-      _log.info("Permission is denied");
-      // The user did not grant the permission.
-      // You can display the permission dialog again and ask the user for
-      // permission.
-      status = await permission.request();
-      _log.info("Permission status on requesting again: $status");
-    } else {
-      _log.info("Permission is not permanently denied");
-      // You can request the permission again.
-      status = await permission.request();
-    }
   }
 
   void updateState(DirectoryBunch _newBunch) {
@@ -95,7 +66,6 @@ class _FolderChildViewState extends State<FolderChildView> {
 
   Future<bool> _buildFileFilter() async {
     _log.info("Building file filter...");
-    // _log.info("Directory: ${directoryBunch!.path}");
     _log.info("store is $store");
     final Directory directory = Directory(store.state.firstBunch!.path);
 
@@ -120,63 +90,6 @@ class _FolderChildViewState extends State<FolderChildView> {
     }
   }
 
-  Future<void> loadFolder(BuildContext context, selectedFolder) async {
-    _log.info("In FolderChildView: Loading folder: $selectedFolder");
-
-    // This line brings prewiew image of the folder, but is performance heavy
-    // List<FileSystemEntity> files =
-    //     await Directory(selectedFolder.path).list().toList();
-    // _log.info("Files: $files No: ${files.length}");
-
-    String dirName = p.basename(selectedFolder.path);
-
-    // if is split, refresh the dir location without navigating to it
-    // if (store.state.isSplit!) {
-    // _log.info("We are in a split view");
-    DirectoryBunch _newBunch = DirectoryBunch(
-      path: selectedFolder.path,
-      name: dirName,
-      imgPath: null,
-      // imgPath: files.isEmpty ? null : files[0].path,
-    );
-
-    setState(() {
-      directoryBunch = _newBunch;
-    });
-    // widget.onNavigate(directoryBunch);
-    bool successfulChangeDirectory = await _buildFileFilter();
-    if (successfulChangeDirectory) {
-      updateState(_newBunch);
-    }
-  }
-
-  void _sortByName(bool ascending) {
-    _FilteredFiles.sort((a, b) {
-      return ascending
-          ? p.basename(a.path).compareTo(p.basename(b.path))
-          : p.basename(b.path).compareTo(p.basename(a.path));
-    });
-    setState(() {});
-  }
-
-  void _sortByCreationDate(bool ascending) {
-    _FilteredFiles.sort((a, b) {
-      return ascending
-          ? a.statSync().changed.compareTo(b.statSync().changed)
-          : b.statSync().changed.compareTo(a.statSync().changed);
-    });
-    setState(() {});
-  }
-
-  void _sortByModificationDate(bool ascending) {
-    _FilteredFiles.sort((a, b) {
-      return ascending
-          ? a.statSync().modified.compareTo(b.statSync().modified)
-          : b.statSync().modified.compareTo(a.statSync().modified);
-    });
-    setState(() {});
-  }
-
   String formatFileName(String fileName) {
     if (fileName.length > 15) {
       String first = fileName.substring(0, 7);
@@ -186,72 +99,85 @@ class _FolderChildViewState extends State<FolderChildView> {
     return fileName;
   }
 
+  _handleFileSelection(file) {
+    _log.info("Handling file selection for file $file");
+    setState(() {
+      if (selectedFiles.isNotEmpty) {
+        _log.info("Selected files is not empty");
+        if (selectedFiles.contains(file)) {
+          _log.info("Selected files contains file. Removing from selection");
+          selectedFiles.remove(file);
+          return;
+        } else {
+          _log.info(
+              "Selected files does not contain file. Adding to selection");
+          selectedFiles.add(file);
+        }
+      } else {
+        _log.info("Selected files is empty. Adding file to selection");
+        selectedFiles.add(file);
+      }
+    });
+  }
+
   _longPressFile(file) {
-    _log.info("Handling long press");
+    _log.info("Handling long press for file $file");
     store.dispatch(SelectFileAction(file, widget.windowIndex));
-    // setState(() {
-    //   if (store.state.selectedFiles!.contains(_file)) {
-    //     store.state.selectedFiles!.remove(_file as File);
-    //   } else {
-    //     store.state.selectedFiles!.add(_file as File);
-    //   }
-    // });
+    // _handleFileSelection(file);
+    return;
   }
 
-  void _changeDirectory(directory) {
-    _log.info("Changing directory");
-    store.dispatch(ChangeDirectoryAction(directory.path, widget.windowIndex));
-    // Also remove files selected, but not from clipboard
-    store.dispatch(DeSelectAllFilesForWindowAction(widget.windowIndex));
-  }
-
-  _singleTapFile(context, _file) {
+  _singleTapFile(context, file) {
     _log.info("Tapped file");
+    // if (selectedFiles.isNotEmpty) {
+    //   _handleFileSelection(file);
+    //   return;
+    // }
+
     if (widget.windowIndex == 1) {
       _log.info("We are in the first window");
       if (store.state.selectedFilesFirst!.isNotEmpty) {
-        store.dispatch(SelectFileAction(_file, widget.windowIndex));
+        store.dispatch(SelectFileAction(file, widget.windowIndex));
         return;
       }
     } else {
       _log.info("We are in the second window");
       if (store.state.selectedFilesSecond!.isNotEmpty) {
-        store.dispatch(SelectFileAction(_file, widget.windowIndex));
+        store.dispatch(SelectFileAction(file, widget.windowIndex));
         return;
       }
     }
-    String extension = p.extension(_file.path).toLowerCase();
+    String extension = p.extension(file.path).toLowerCase();
     Navigator.push(context, MaterialPageRoute(builder: (context) {
       if (extension == '.mp4') {
         return FullScreenVideoView(
-          videoPath: _file.path,
+          videoPath: file.path,
         );
       } else {
         return FullScreenImageView(
-          imagePath: _file.path,
+          imagePath: file.path,
         );
       }
     }));
   }
 
   bool isFileSelected(FileSystemEntity file) {
-    if (widget.windowIndex == 1) {
-      return store.state.selectedFilesFirst!.contains(file);
-    } else {
-      return store.state.selectedFilesSecond!.contains(file);
+    // if (widget.windowIndex == 1) {
+    //   return store.state.selectedFilesFirst!.contains(file);
+    // } else {
+    //   return store.state.selectedFilesSecond!.contains(file);
+    // }
+    if (selectedFiles.contains(file)) {
+      return true;
     }
+    return false;
   }
 
   @override
   Widget build(BuildContext context) {
-    // _log.info(
-    //     "In FolderChildView build method, directoryBunch is ${directoryBunch!.path}");
-    // _log.info("store is $store");
     return StoreConnector<AppState, Store>(
       converter: (store) => store,
       builder: (context, store) {
-        // _log.info(
-        //     "In FolderChildView build method, store is $store. It is rebuilding...");
         List<FileSystemEntity> files = [];
         List<FileSystemEntity> allfiles = widget.windowIndex == 1
             ? store.state.firstFiles
@@ -275,82 +201,41 @@ class _FolderChildViewState extends State<FolderChildView> {
                         store.dispatch(
                             UpdateActiveChildWindow(widget.windowIndex));
                       },
-                      child: Container(
-                        color: store.state.isSplit &&
-                                widget.windowIndex ==
-                                    store.state.activeChildWindow
-                            ? Colors.lime[50]
-                            : Colors.white,
-                        child: GridView.builder(
-                          padding: EdgeInsets.only(bottom: 50, top: 20),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          color: store.state.isSplit &&
+                                  widget.windowIndex ==
+                                      store.state.activeChildWindow
+                              ? Colors.lime[50]
+                              : Colors.white,
+                          child: GridView.builder(
+                            padding: EdgeInsets.only(bottom: 50, top: 20),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 50,
+                                    mainAxisSpacing: 20),
+                            itemCount: files.length,
+                            itemBuilder: (context, index) {
+                              if (isMediaFile(files[index])) {
+                                // It is a regular file, not a directory
+                                return FileWidget(
+                                  file: files[index],
+                                  // isSelected: isFileSelected(files[index]),
+                                  windowIndex: widget.windowIndex,
+                                  onTap: _singleTapFile,
+                                  onLongPress: _longPressFile,
+                                );
+                              } else {
+                                // It is a directory
+                                return DirectoryWidget(
+                                  directory: files[index],
+                                  windowIndex: widget.windowIndex,
+                                );
+                              }
+                            },
                           ),
-                          itemCount: files.length,
-                          itemBuilder: (context, index) {
-                            if (isMediaFile(files[index])) {
-                              // _log.info("Media File found");
-
-                              String fileName = p.basename(files[index].path);
-                              return Container(
-                                margin: EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: isFileSelected(files[index])
-                                      ? Colors.green.withOpacity(0.3)
-                                      : null,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Expanded(
-                                      flex: 5,
-                                      child: FileThumbnail(
-                                        file: files[index],
-                                        onTap: () => _singleTapFile(
-                                            context, files[index]),
-                                        onLongPress: () =>
-                                            _longPressFile(files[index]),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Align(
-                                          alignment: Alignment.center,
-                                          child: Wrap(
-                                            children: [
-                                              Text(formatFileName(fileName))
-                                            ],
-                                          )),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              String dirName = p.basename(files[index].path);
-                              return InkWell(
-                                onTap: () async {
-                                  _changeDirectory(files[index]);
-                                },
-                                child: Column(
-                                  children: <Widget>[
-                                    Expanded(
-                                      flex: 2,
-                                      child: Icon(
-                                        Icons.folder,
-                                        size: 160,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Align(
-                                          alignment: Alignment.center,
-                                          child: Text(dirName)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
                         ),
                       ),
                     ),
