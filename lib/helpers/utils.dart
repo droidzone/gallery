@@ -97,13 +97,6 @@ String formattedDD(_file) {
   return formattedDate;
 }
 
-String formattedMonth(file) {
-  DateTime modificationDate = file.statSync().modified;
-
-  String formattedDate = DateFormat('MMM').format(modificationDate);
-  return formattedDate;
-}
-
 Future<Uint8List> getThumbnail(String path) async {
   String extension = p.extension(path).toLowerCase();
   if (extension == '.mp4') {
@@ -119,6 +112,13 @@ Future<Uint8List> getThumbnail(String path) async {
     final file = File(path);
     return file.readAsBytesSync();
   }
+}
+
+String formattedMonth(file) {
+  DateTime modificationDate = file.statSync().modified;
+
+  String formattedDate = DateFormat('MMM').format(modificationDate);
+  return formattedDate;
 }
 
 String formatFileName(String fileName) {

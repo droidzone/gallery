@@ -11,6 +11,7 @@ import 'package:gallery/views/video_view.dart';
 import 'dart:io';
 
 import 'package:gallery/structure/directory_bunch.dart';
+import 'package:gallery/widgets/file_thumbnail_widget.dart';
 import 'package:logging/logging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
@@ -149,23 +150,6 @@ class _FolderChildViewState extends State<FolderChildView> {
     }
   }
 
-  Future<Uint8List> _getThumbnail(String path) async {
-    String extension = p.extension(path).toLowerCase();
-    if (extension == '.mp4') {
-      final uint8list = await VideoThumbnail.thumbnailData(
-        video: path,
-        imageFormat: ImageFormat.JPEG,
-        maxWidth:
-            128, // specify the width of the thumbnail, let the height auto-scaled to keep the source aspect ratio
-        quality: 25,
-      );
-      return uint8list!;
-    } else {
-      final file = File(path);
-      return file.readAsBytesSync();
-    }
-  }
-
   void _sortByName(bool ascending) {
     _FilteredFiles.sort((a, b) {
       return ascending
@@ -202,7 +186,7 @@ class _FolderChildViewState extends State<FolderChildView> {
     return fileName;
   }
 
-  void _longPressFile(file) {
+  _longPressFile(file) {
     _log.info("Handling long press");
     store.dispatch(SelectFileAction(file, widget.windowIndex));
     // setState(() {
@@ -221,7 +205,7 @@ class _FolderChildViewState extends State<FolderChildView> {
     store.dispatch(DeSelectAllFilesForWindowAction(widget.windowIndex));
   }
 
-  void _singleTapFile(context, _file) {
+  _singleTapFile(context, _file) {
     _log.info("Tapped file");
     if (widget.windowIndex == 1) {
       _log.info("We are in the first window");
@@ -321,76 +305,12 @@ class _FolderChildViewState extends State<FolderChildView> {
                                   children: [
                                     Expanded(
                                       flex: 5,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          // Draw a border around each file
-                                          border: Border.all(
-                                            color: Colors.grey,
-                                            width: 1,
-                                          ),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: InkWell(
-                                          onLongPress: () {
-                                            _longPressFile(files[index]);
-                                          },
-                                          onTap: () {
-                                            _singleTapFile(
-                                                context, files[index]);
-                                          },
-                                          child: Stack(
-                                            children: [
-                                              FutureBuilder(
-                                                future: _getThumbnail(
-                                                    files[index].path),
-                                                builder: (BuildContext context,
-                                                    AsyncSnapshot<Uint8List>
-                                                        snapshot) {
-                                                  if (snapshot.connectionState ==
-                                                          ConnectionState
-                                                              .done &&
-                                                      snapshot.hasData) {
-                                                    return Image.memory(
-                                                      snapshot.data!,
-                                                      fit: BoxFit.contain,
-                                                      height: 100,
-                                                    );
-                                                  } else {
-                                                    return Text('Loading...');
-                                                  }
-                                                },
-                                              ),
-                                              Positioned(
-                                                bottom: 0,
-                                                left: 0,
-                                                child: CircleAvatar(
-                                                  backgroundColor: Colors.white,
-                                                  child: Column(
-                                                    children: [
-                                                      Text(
-                                                        formattedDD(
-                                                            files[index]),
-                                                        style: TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        formattedMonth(
-                                                            files[index]),
-                                                        style: TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 12,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                        ),
+                                      child: FileThumbnail(
+                                        file: files[index],
+                                        onTap: () => _singleTapFile(
+                                            context, files[index]),
+                                        onLongPress: () =>
+                                            _longPressFile(files[index]),
                                       ),
                                     ),
                                     Expanded(
