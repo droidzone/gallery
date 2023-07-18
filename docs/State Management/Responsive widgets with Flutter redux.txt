@@ -1,0 +1,56 @@
+How can I make a widget responsive to state change, using flutter redux
+
+To make a widget responsive to state changes using Flutter Redux, you can use the `StoreConnector` widget. This widget connects your Flutter Widget with the Redux Store.
+
+The `StoreConnector` takes two important parameters:
+
+1. `converter`: A function that converts the entire `Store` into a more specific `ViewModel` tailored to your Widget's needs.
+2. `builder`: A function that will be run each time the `ViewModel` changes. It should return a new Widget tree.
+
+Here is an example of how you can use it:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+import 'package:redux/redux.dart';
+
+class MyWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, ViewModel>(
+      converter: (Store<AppState> store) {
+        return ViewModel.create(store);
+      },
+      builder: (BuildContext context, ViewModel viewModel) {
+        return Text(
+          viewModel.counter.toString(),
+          style: Theme.of(context).textTheme.headline4,
+        );
+      },
+    );
+  }
+}
+
+class ViewModel {
+  final int counter;
+  final Function() onIncrement;
+
+  ViewModel({
+    required this.counter,
+    required this.onIncrement,
+  });
+
+  factory ViewModel.create(Store<AppState> store) {
+    _onIncrement() {
+      store.dispatch(IncrementAction());
+    }
+
+    return ViewModel(
+      counter: store.state.counter,
+      onIncrement: _onIncrement,
+    );
+  }
+}
+```
+
+In this example, whenever the `counter` in the `AppState` changes, the `StoreConnector` will rebuild the `Text` widget with the updated value. The `ViewModel` provides a convenient way to access the parts of the state the widget cares about and the dispatch functions for user actions.

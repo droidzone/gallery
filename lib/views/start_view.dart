@@ -15,6 +15,7 @@ import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:redux/redux.dart';
+import 'package:path/path.dart' as Path;
 
 import '../resources/constants.dart';
 
@@ -33,6 +34,8 @@ class StartView extends StatefulWidget {
 }
 
 class _StartViewState extends State<StartView> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   List<FileSystemEntity> files = [];
 
   List<String> availableDirectories = [];
@@ -140,12 +143,93 @@ class _StartViewState extends State<StartView> {
     store.dispatch(LoadFilesAction(targetPath, store.state.activeChildWindow!));
   }
 
+  Future<void> clearClipBoard() {
+    _log.info("Clearing clipboard");
+    return store.dispatch(ClearClipBoardAction());
+  }
+
+  Future<void> showPasteDialog(BuildContext context, Store store) async {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          _log.info("state is ${store.state}");
+          return AlertDialog(
+            title: const Text(
+              'Start Copying Files?',
+              style: kDialogHeadingStyle,
+            ),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text(
+                      'Do you wish to copy files from clipboard to this directory?',
+                      style: kDialogTextStyle),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    'Files will be copied to ' +
+                        (store.state.activeChildWindow == 1
+                            ? store.state.firstBunch!.path
+                            : store.state.secondBunch!.path),
+                    style: kDialogTextStyle,
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Yes', style: kButtonOkStyle),
+                onPressed: () async {
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text(
+                            'Start Copying Files?',
+                            style: kDialogHeadingStyle,
+                          ),
+                          content: SingleChildScrollView(
+                            child: ListBody(
+                              children: <Widget>[
+                                Text('Copying files..',
+                                    style: kDialogTextStyle),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Text(store.state.filesLeftToCopy.toString() +
+                                    'left to copy'),
+                              ],
+                            ),
+                          ),
+                        );
+                      });
+                  await _pasteFromClipBoard();
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: const Text(
+                  'Cancel',
+                  style: kButtonCancelStyle,
+                ),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return StoreConnector<AppState, Store>(
       converter: (store) => store,
       builder: (context, store) {
         return Scaffold(
+          key: _scaffoldKey,
           appBar: AppBar(
             backgroundColor: Theme.of(context).colorScheme.primary,
             title: const Text(
@@ -169,83 +253,7 @@ class _StartViewState extends State<StartView> {
                   ? IconButton(
                       onPressed: () {
                         _log.info("Pressed paste");
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              _log.info("state is ${store.state}");
-                              return AlertDialog(
-                                title: const Text(
-                                  'Start Copying Files?',
-                                  style: kDialogHeadingStyle,
-                                ),
-                                content: SingleChildScrollView(
-                                  child: ListBody(
-                                    children: <Widget>[
-                                      Text(
-                                          'Do you wish to copy files from clipboard to this directory?',
-                                          style: kDialogTextStyle),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Text(
-                                        'Files will be copied to ' +
-                                            (store.state.activeChildWindow == 1
-                                                ? store.state.firstBunch!.path
-                                                : store
-                                                    .state.secondBunch!.path),
-                                        style: kDialogTextStyle,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: const Text('Yes',
-                                        style: kButtonOkStyle),
-                                    onPressed: () async {
-                                      showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              title: const Text(
-                                                'Start Copying Files?',
-                                                style: kDialogHeadingStyle,
-                                              ),
-                                              content: SingleChildScrollView(
-                                                child: ListBody(
-                                                  children: <Widget>[
-                                                    Text('Copying files..',
-                                                        style:
-                                                            kDialogTextStyle),
-                                                    SizedBox(
-                                                      height: 10,
-                                                    ),
-                                                    Text(store.state
-                                                            .filesLeftToCopy
-                                                            .toString() +
-                                                        'left to copy'),
-                                                  ],
-                                                ),
-                                              ),
-                                            );
-                                          });
-                                      await _pasteFromClipBoard();
-                                      Navigator.of(context).pop();
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: const Text(
-                                      'Cancel',
-                                      style: kButtonCancelStyle,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                              );
-                            });
+                        showPasteDialog(context, store);
                       },
                       icon: Icon(
                         Icons.content_paste_sharp,
@@ -339,6 +347,60 @@ class _StartViewState extends State<StartView> {
                   color: Theme.of(context).colorScheme.inversePrimary,
                 ),
               ),
+              PopupMenuButton<String>(
+                icon: Icon(
+                  Icons.sort,
+                  color: Theme.of(context).colorScheme.inversePrimary,
+                ), // Use an icon button
+                onSelected: (String result) {
+                  switch (result) {
+                    case 'Name Ascending':
+                      sortByName(true, store.state.filteredFiles);
+                      break;
+                    case 'Name Descending':
+                      sortByName(false, store.state.filteredFiles);
+                      break;
+                    case 'Creation Date Ascending':
+                      sortByCreationDate(true, store.state.filteredFiles);
+                      break;
+                    case 'Creation Date Descending':
+                      sortByCreationDate(false, store.state.filteredFiles);
+                      break;
+                    case 'Modification Date Ascending':
+                      sortByModificationDate(true, store.state.filteredFiles);
+                      break;
+                    case 'Modification Date Descending':
+                      sortByModificationDate(false, store.state.filteredFiles);
+                      break;
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'Name Ascending',
+                    child: Text('Name Ascending'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'Name Descending',
+                    child: Text('Name Descending'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'Creation Date Ascending',
+                    child: Text('Creation Date Ascending'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'Creation Date Descending',
+                    child: Text('Creation Date Descending'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'Modification Date Ascending',
+                    child: Text('Modification Date Ascending'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'Modification Date Descending',
+                    child: Text('Modification Date Descending'),
+                  ),
+                ],
+              ),
             ],
           ),
           body: LayoutBuilder(
@@ -361,6 +423,7 @@ class _StartViewState extends State<StartView> {
                     child: store.state.firstBunch != null
                         ? InfoBar(
                             windowIndex: 1,
+                            scaffoldkey: _scaffoldKey,
                           )
                         : Container(),
                   ),
@@ -400,6 +463,7 @@ class _StartViewState extends State<StartView> {
                             child: Center(
                               child: InfoBar(
                                 windowIndex: 2,
+                                scaffoldkey: _scaffoldKey,
                               ),
                             ),
                           ),
@@ -422,6 +486,80 @@ class _StartViewState extends State<StartView> {
             },
           ),
           bottomNavigationBar: const BottomNavigation(),
+          endDrawer: Drawer(
+            child: Container(
+              color: Colors.purple[100],
+              child: Column(
+                children: [
+                  Container(
+                    height: 100,
+                    child: DrawerHeader(
+                      child: Text(
+                        'Clipboard',
+                        style: kDrawerHeaderStyle,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Stack(
+                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ListView.builder(
+                          itemCount: store.state.combinedClipboard.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            FileSystemEntity item =
+                                store.state.combinedClipboard[index];
+                            String extension =
+                                Path.extension(item.path).toLowerCase();
+
+                            bool isImage = ['.jpg', '.jpeg', '.png', '.gif']
+                                .contains(extension);
+
+                            return ListTile(
+                              title: Text(item.path),
+                              leading: isImage
+                                  ? Image.file(
+                                      File(item.path),
+                                      // width: 50,
+                                    )
+                                  : null,
+                            );
+                          },
+                          // shrinkWrap: true, // Add this line
+                          // physics:
+                          //     NeverScrollableScrollPhysics(), // And this line
+                        ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              // crossAxisAlignment: CrossAxisAlignment.end,
+                              children: <Widget>[
+                                ElevatedButton(
+                                  onPressed: () {
+                                    clearClipBoard();
+                                  },
+                                  child: Text('Clear'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    showPasteDialog(context, store);
+                                  },
+                                  child: Text('Paste'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );

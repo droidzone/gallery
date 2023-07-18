@@ -1,0 +1,67 @@
+Qn: Using flutter and flutter redux, I want to call a specific function in a sibling widget to run when a button in another sibling is run
+
+In Flutter, widgets are immutable and their states can't be directly manipulated by sibling or parent widgets. However, you can use a shared state management solution like Redux to achieve this.
+
+Here's an example of how you can do it:
+
+Let's say you have two sibling widgets: `WidgetA` and `WidgetB`. `WidgetA` has a button and when it's pressed, you want a function in `WidgetB` to run.
+
+Firstly, define your actions and reducers:
+
+```dart
+// Action
+class CallFunctionAction {}
+
+// Reducer
+AppState appReducer(AppState state, dynamic action) {
+  if (action is CallFunctionAction) {
+    return AppState(shouldCallFunction: true);
+  }
+  return state;
+}
+```
+
+Then, in `WidgetA`, dispatch the `CallFunctionAction` when the button is pressed:
+
+```dart
+class WidgetA extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, ViewModel>(
+      converter: (store) => ViewModel.create(store),
+      builder: (context, viewModel) => RaisedButton(
+        onPressed: viewModel.onButtonPressed,
+        child: Text('Press me'),
+      ),
+    );
+  }
+}
+```
+
+In `WidgetB`, listen for changes in the `shouldCallFunction` field and call the function when it changes:
+
+```dart
+class WidgetB extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, ViewModel>(
+      converter: (store) => ViewModel.create(store),
+      onDidChange: (viewModel) {
+        if (viewModel.shouldCallFunction) {
+          _callMyFunction();
+          // Reset the flag in the store after calling the function
+          store.dispatch(ResetCallFunctionAction());
+        }
+      },
+      builder: (context, viewModel) => Container(),
+    );
+  }
+
+  void _callMyFunction() {
+    // Your function logic here
+  }
+}
+```
+
+This way, when the button in `WidgetA` is pressed, it will update the Redux store, which will trigger the function in `WidgetB`.
+

@@ -29,3 +29,15 @@ const kDialogHeadingStyle = TextStyle(
   color: Colors.blue,
   fontWeight: FontWeight.bold,
 );
+
+const kDrawerHeaderStyle = TextStyle(
+  fontSize: 20,
+  color: Colors.black,
+  fontWeight: FontWeight.bold,
+);
+
+const kDrawerTextStyle = TextStyle(
+  fontSize: 18,
+  color: Colors.black,
+  // fontWeight: FontWeight.bold,
+);

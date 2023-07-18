@@ -16,10 +16,12 @@ class InfoBar extends StatelessWidget {
     super.key,
     // required this.directorybunch,
     required this.windowIndex,
+    required this.scaffoldkey,
   });
   DirectoryBunch? directorybunch;
   int windowIndex;
   late Store<AppState> store;
+  final GlobalKey<ScaffoldState> scaffoldkey;
 
   void NavigateTo(path) async {
     _log.info("Navigating to $path");
@@ -168,15 +170,21 @@ class InfoBar extends StatelessWidget {
                   right: 0,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 8.0, right: 10),
-                    child: Badge(
-                      backgroundColor: Colors.blue[500],
-                      label: Text(
-                        _clipboardLength().toString(),
-                        style: TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                      child: Icon(
-                        Icons.copy_outlined,
-                        color: Colors.black,
+                    child: InkWell(
+                      onTap: () {
+                        _log.info("Clipboard tapped");
+                        scaffoldkey.currentState!.openEndDrawer();
+                      },
+                      child: Badge(
+                        backgroundColor: Colors.blue[500],
+                        label: Text(
+                          _clipboardLength().toString(),
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        child: Icon(
+                          Icons.copy_outlined,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                   ), // Replace with your icon

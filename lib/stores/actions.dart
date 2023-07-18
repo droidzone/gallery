@@ -89,10 +89,21 @@ class DeSelectAllFilesForWindowAction {
   DeSelectAllFilesForWindowAction(this.windowIndex);
 }
 
+class SelectDeselectFileAction {
+  final FileSystemEntity file;
+  final int windowIndex;
+  SelectDeselectFileAction(this.file, this.windowIndex);
+}
+
 class RemoveFileFromClipBoardAction {
   final FileSystemEntity file;
   final int windowIndex;
   RemoveFileFromClipBoardAction(this.file, this.windowIndex);
+}
+
+class ClearClipBoardAction {
+  // final int windowIndex;
+  ClearClipBoardAction();
 }
 
 class CopyFilesToClipBoardAction {
@@ -110,4 +121,11 @@ class UpdateFilesLeftToCopyAction {
 
 class DeleteSelectedFilesAction {
   DeleteSelectedFilesAction();
+}
+
+class ToggleFileSelectionAction {
+  final FileSystemEntity file;
+  final int windowIndex;
+
+  ToggleFileSelectionAction(this.file, this.windowIndex);
 }

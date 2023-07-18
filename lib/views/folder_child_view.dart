@@ -24,6 +24,33 @@ import 'package:gallery/helpers/utils.dart';
 
 final Logger _log = Logger('FolderChildView');
 
+class FilesViewModel {
+  final List<FileSystemEntity> files;
+  final bool isSplit;
+  final int activeChildWindow;
+
+  FilesViewModel({
+    required this.files,
+    required this.isSplit,
+    required this.activeChildWindow,
+  });
+
+  static FilesViewModel fromStore(Store<AppState> store, int windowIndex) {
+    List<FileSystemEntity>? allfiles =
+        windowIndex == 1 ? store.state.firstFiles : store.state.secondFiles;
+    List<FileSystemEntity> mediaFiles =
+        allfiles!.where((file) => isMediaFile(file)).toList();
+    List<FileSystemEntity>? files =
+        store.state.mainviewCurrentTab == "Media" ? mediaFiles : allfiles;
+
+    return FilesViewModel(
+      files: files,
+      isSplit: store.state.isSplit!,
+      activeChildWindow: store.state.activeChildWindow!,
+    );
+  }
+}
+
 class FolderChildView extends StatefulWidget {
   FolderChildView({
     Key? key,
@@ -173,40 +200,102 @@ class _FolderChildViewState extends State<FolderChildView> {
     return false;
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return StoreConnector<AppState, Store>(
+  //     converter: (store) => store,
+  //     builder: (context, store) {
+  //       List<FileSystemEntity> files = [];
+  //       List<FileSystemEntity> allfiles = widget.windowIndex == 1
+  //           ? store.state.firstFiles
+  //           : store.state.secondFiles;
+  //       List<FileSystemEntity> mediaFiles =
+  //           allfiles.where((file) => isMediaFile(file)).toList();
+  //       if (store.state.mainviewCurrentTab == "Media") {
+  //         files = mediaFiles;
+  //       } else {
+  //         files = allfiles;
+  //       }
+  //       return Stack(
+  //         children: [
+  //           Scaffold(
+  //             body: files.isEmpty
+  //                 ? Center(
+  //                     child: Text('No files found'),
+  //                   )
+  //                 : InkWell(
+  //                     onTap: () {
+  //                       store.dispatch(
+  //                           UpdateActiveChildWindow(widget.windowIndex));
+  //                     },
+  //                     child: Padding(
+  //                       padding: const EdgeInsets.all(8.0),
+  //                       child: Container(
+  //                         color: store.state.isSplit &&
+  //                                 widget.windowIndex ==
+  //                                     store.state.activeChildWindow
+  //                             ? Colors.lime[50]
+  //                             : Colors.white,
+  //                         child: GridView.builder(
+  //                           padding: EdgeInsets.only(bottom: 50, top: 20),
+  //                           gridDelegate:
+  //                               SliverGridDelegateWithFixedCrossAxisCount(
+  //                                   crossAxisCount: 3,
+  //                                   crossAxisSpacing: 50,
+  //                                   mainAxisSpacing: 20),
+  //                           itemCount: files.length,
+  //                           itemBuilder: (context, index) {
+  //                             if (isMediaFile(files[index])) {
+  //                               // It is a regular file, not a directory
+  //                               return FileWidget(
+  //                                 file: files[index],
+  //                                 // isSelected: isFileSelected(files[index]),
+  //                                 windowIndex: widget.windowIndex,
+  //                                 onTap: _singleTapFile,
+  //                                 onLongPress: _longPressFile,
+  //                               );
+  //                             } else {
+  //                               // It is a directory
+  //                               return DirectoryWidget(
+  //                                 directory: files[index],
+  //                                 windowIndex: widget.windowIndex,
+  //                               );
+  //                             }
+  //                           },
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   ),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<AppState, Store>(
-      converter: (store) => store,
-      builder: (context, store) {
-        List<FileSystemEntity> files = [];
-        List<FileSystemEntity> allfiles = widget.windowIndex == 1
-            ? store.state.firstFiles
-            : store.state.secondFiles;
-        List<FileSystemEntity> mediaFiles =
-            allfiles.where((file) => isMediaFile(file)).toList();
-        if (store.state.mainviewCurrentTab == "Media") {
-          files = mediaFiles;
-        } else {
-          files = allfiles;
-        }
+    return StoreConnector<AppState, FilesViewModel>(
+      converter: (store) => FilesViewModel.fromStore(store, widget.windowIndex),
+      builder: (context, viewModel) {
         return Stack(
           children: [
             Scaffold(
-              body: files.isEmpty
+              body: viewModel.files.isEmpty
                   ? Center(
                       child: Text('No files found'),
                     )
                   : InkWell(
                       onTap: () {
-                        store.dispatch(
+                        StoreProvider.of<AppState>(context).dispatch(
                             UpdateActiveChildWindow(widget.windowIndex));
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Container(
-                          color: store.state.isSplit &&
+                          color: viewModel.isSplit &&
                                   widget.windowIndex ==
-                                      store.state.activeChildWindow
+                                      viewModel.activeChildWindow
                               ? Colors.lime[50]
                               : Colors.white,
                           child: GridView.builder(
@@ -216,21 +305,16 @@ class _FolderChildViewState extends State<FolderChildView> {
                                     crossAxisCount: 3,
                                     crossAxisSpacing: 50,
                                     mainAxisSpacing: 20),
-                            itemCount: files.length,
+                            itemCount: viewModel.files.length,
                             itemBuilder: (context, index) {
-                              if (isMediaFile(files[index])) {
-                                // It is a regular file, not a directory
+                              if (isMediaFile(viewModel.files[index])) {
                                 return FileWidget(
-                                  file: files[index],
-                                  // isSelected: isFileSelected(files[index]),
+                                  file: viewModel.files[index],
                                   windowIndex: widget.windowIndex,
-                                  onTap: _singleTapFile,
-                                  onLongPress: _longPressFile,
                                 );
                               } else {
-                                // It is a directory
                                 return DirectoryWidget(
-                                  directory: files[index],
+                                  directory: viewModel.files[index],
                                   windowIndex: widget.windowIndex,
                                 );
                               }

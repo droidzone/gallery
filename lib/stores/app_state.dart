@@ -87,4 +87,15 @@ class AppState {
       clipboardSecond: filesCopiedForSecond ?? clipboardSecond,
     );
   }
+
+  List<FileSystemEntity> get combinedClipboard {
+    List<FileSystemEntity> combined = [];
+    if (clipboardFirst != null) {
+      combined.addAll(clipboardFirst!);
+    }
+    if (clipboardSecond != null) {
+      combined.addAll(clipboardSecond!);
+    }
+    return combined;
+  }
 }

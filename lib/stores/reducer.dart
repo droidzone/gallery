@@ -53,20 +53,83 @@ AppState updateReducer(AppState state, action) {
         return state.copyWith(filesSecond: action.files);
       }
     case CopyFilesToClipBoardyAction:
-      return handleCopyFilesToClipboard(state, action);
+      return _handleCopyFilesToClipboard(state, action);
     case SelectFileAction:
-      return handleSelectFileAction(state, action);
+      return _handleSelectFileAction(state, action);
     case CopyFilesToClipBoardAction:
-      return handleCopyFilesToClipboardAction(state, action);
+      return _handleCopyFilesToClipboardAction(state, action);
     case RemoveFileFromClipBoardAction:
-      return handleRemoveFileFromClipboardAction(state, action);
+      return _handleRemoveFileFromClipboardAction(state, action);
     case DeSelectAllFilesForWindowAction:
-      return handleDeSelectAllFilesForWindowAction(state, action);
+      return _handleDeSelectAllFilesForWindowAction(state, action);
+    case ClearClipBoardAction:
+      return _handleClearClipBoardAction(state, action);
+    case SelectDeselectFileAction:
+      return _handleSelectDeselctFileAction(state, action);
+    case ToggleFileSelectionAction:
+      return _toggleFileSelection(state, action);
   }
   return state;
 }
 
-AppState handleDeSelectAllFilesForWindowAction(AppState state, action) {
+AppState _toggleFileSelection(
+    AppState state, ToggleFileSelectionAction action) {
+  _log.info("_toggleFileSelection reducer");
+  _log.info("action.file: ${action.file}");
+  if (action.windowIndex == 1) {
+    if (state.selectedFilesFirst!.contains(action.file)) {
+      state.selectedFilesFirst!.remove(action.file);
+    } else {
+      state.selectedFilesFirst!.add(action.file);
+    }
+    return state.copyWith(
+      selectedFirst: state.selectedFilesFirst,
+    );
+  } else {
+    if (state.selectedFilesSecond!.contains(action.file)) {
+      state.selectedFilesSecond!.remove(action.file);
+    } else {
+      state.selectedFilesSecond!.add(action.file);
+    }
+    return state.copyWith(
+      selectedSecond: state.selectedFilesSecond,
+    );
+  }
+}
+
+AppState _handleSelectDeselctFileAction(AppState state, action) {
+  _log.info("SelectDeselctFileAction reducer");
+  _log.info("action.file: ${action.file}");
+  _log.info("action.windowIndex: ${action.windowIndex}");
+
+  List<FileSystemEntity> combinedList =
+      getUpdatedSelectedFiles(state, action, action.windowIndex);
+
+  if (action.windowIndex == 1) {
+    return state.copyWith(selectedFirst: combinedList);
+  } else if (action.windowIndex == 2) {
+    return state.copyWith(selectedSecond: combinedList);
+  }
+  return state;
+}
+
+AppState _handleClearClipBoardAction(AppState state, action) {
+  _log.info("ClearClipBoardAction reducer");
+  // _log.info("action.windowIndex: ${action.windowIndex}");
+
+  // if (action.windowIndex == 1) {
+  return state.copyWith(
+    filesCopiedForFirst: [],
+    filesCopiedForSecond: [],
+  );
+  // } else if (action.windowIndex == 2) {
+  //   return state.copyWith(filesCopiedForSecond: []);
+  // }
+  // _log.info("state is $state");
+  // return state;
+}
+
+AppState _handleDeSelectAllFilesForWindowAction(AppState state, action) {
   _log.info("DeSelectAllFilesForWindowAction reducer");
   _log.info("action.windowIndex: ${action.windowIndex}");
 
@@ -79,7 +142,7 @@ AppState handleDeSelectAllFilesForWindowAction(AppState state, action) {
   return state;
 }
 
-AppState handleCopyFilesToClipboard(AppState state, action) {
+AppState _handleCopyFilesToClipboard(AppState state, action) {
   _log.info("CopyFilesToClipBoardyAction reducer");
   _log.info("action.files: ${action.files}");
   _log.info("action.windowIndex: ${action.windowIndex}");
@@ -98,7 +161,7 @@ AppState handleCopyFilesToClipboard(AppState state, action) {
   return state;
 }
 
-AppState handleSelectFileAction(AppState state, action) {
+AppState _handleSelectFileAction(AppState state, action) {
   _log.info("SelectFileAction reducer");
   _log.info("action.file: ${action.file}");
   _log.info("action.windowIndex: ${action.windowIndex}");
@@ -114,7 +177,7 @@ AppState handleSelectFileAction(AppState state, action) {
   return state;
 }
 
-AppState handleCopyFilesToClipboardAction(AppState state, action) {
+AppState _handleCopyFilesToClipboardAction(AppState state, action) {
   _log.info("CopyFilesToClipBoardAction reducer");
 
   List<FileSystemEntity> clipboardFirst =
@@ -127,7 +190,7 @@ AppState handleCopyFilesToClipboardAction(AppState state, action) {
       filesCopiedForSecond: clipboardSecond);
 }
 
-AppState handleRemoveFileFromClipboardAction(
+AppState _handleRemoveFileFromClipboardAction(
     AppState state, RemoveFileFromClipBoardAction action) {
   _log.info("RemoveFileFromClipBoardAction reducer");
   _log.info("action.file: ${action.file}");

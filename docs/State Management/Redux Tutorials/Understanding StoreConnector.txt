@@ -1,0 +1,49 @@
+@Override
+Widget build(BuildContext context) {
+  return StoreConnector<AppState, Store>(
+    converter: (store) => store,
+    builder: (context, store) {
+
+
+return StoreConnector<AppState, Store>(...): This is a widget provided by the flutter_redux package. It connects the Redux Store to the widget tree. It takes two main parameters: converter and builder.
+
+converter: This is a function that takes the Store as an argument and returns something that will be passed to the builder. In this case, it simply returns the Store itself.
+
+builder: This is a function that will be run whenever the Store changes. It takes two arguments: the BuildContext and the value returned from the converter. In this case, it receives the Store from the converter. The builder function should return a new widget tree, and it will be run every time the Store changes, allowing the UI to update when the state changes.
+
+How does StoreConnector differ from StoreBuilder
+
+`StoreConnector` and `StoreBuilder` are both widgets provided by the `flutter_redux` package for connecting a Redux `Store` to parts of your widget tree. However, they have some differences in their usage and behavior.
+
+1. **StoreConnector**
+
+```dart
+StoreConnector<AppState, ViewModel>(
+  converter: (store) => store.state,
+  builder: (context, viewModel) {
+    // Returns a widget that uses the ViewModel.
+  },
+)
+```
+
+- The `StoreConnector` takes a `converter` function that can convert the entire `Store` into a more specific 'view model' that the builder function can use. This is useful when you want to pick out specific pieces of state from your store or do some computation on the state before it gets to your builder.
+
+- The `builder` function will only be called when the 'view model' changes. This means if the `converter` function returns a new object that is not equal to the previous object (according to `==`), then the `builder` function will be called again with the new 'view model'.
+
+2. **StoreBuilder**
+
+```dart
+StoreBuilder<AppState>(
+  builder: (context, store) {
+    // Returns a widget that uses the Store.
+  },
+)
+```
+
+- The `StoreBuilder` does not have a `converter` function. Instead, the `builder` function is directly given the `Store`.
+
+- The `builder` function will be called every time an action is dispatched to the `Store`, regardless of whether the state actually changed. This could potentially lead to unnecessary rebuilds of your widget tree if the state used in this part of the tree has not actually changed.
+
+In summary, `StoreConnector` is generally more efficient because it can reduce the number of times the `builder` function is called by using the `converter` function to create a 'view model'. On the other hand, `StoreBuilder` is simpler to use but may cause unnecessary widget rebuilds.
+
+

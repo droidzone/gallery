@@ -1,0 +1,137 @@
+Problem: is that whenever a file is tapped, the entire list of files repaints, probably because store changes. I dont want the entire list of files to repaint, only the file widget clicked. How do I make my code better in that way?
+
+The issue you're facing is due to the fact that every time a file is tapped, the entire list of files repaints because the state of the store changes. This is a common problem when using global state management solutions like Redux.
+
+To optimize this, you can make use of `StoreConnector`'s `distinct` property. When set to true, the `StoreConnector` will only trigger a rebuild if the `converter` function returns a value that is not equal to the previous one.
+
+Here's how you can do it:
+
+```dart
+StoreConnector<AppState, Store>(
+  converter: (store) => store,
+  distinct: true, // Add this line
+  builder: (context, store) {
+    ...
+  },
+);
+```
+
+However, this might not be enough if your `converter` function returns a new object every time it's called. In this case, even if the data inside the object is the same, Flutter will consider it as a different object and will still rebuild the widget.
+
+To solve this, you should ensure that the `converter` function does not create a new object if the data has not changed. You can achieve this by creating a ViewModel class and implementing the `==` operator and `hashCode` getter.
+
+But in your case, since you are directly passing the store to the builder, you can't really use the `distinct` property effectively. 
+
+Instead, you can use the `onWillChange` callback of `StoreConnector` to check if the selected file list has changed and then manually update the state of the individual `FileWidget`.
+
+Here's an example:
+
+```dart
+StoreConnector<AppState, Store>(
+  converter: (store) => store,
+  onWillChange: (oldStore, newStore) {
+    if (oldStore.state.selectedFilesFirst != newStore.state.selectedFilesFirst ||
+        oldStore.state.selectedFilesSecond != newStore.state.selectedFilesSecond) {
+      // The selected file list has changed.
+      // Here, you can manually update the state of the individual FileWidget.
+    }
+  },
+  builder: (context, store) {
+    ...
+  },
+);
+```
+
+In the `onWillChange` callback, you can compare the old and new selected file lists and if they are not the same, you can manually update the state of the individual `FileWidget`. This way, only the widgets that need to be updated will be rebuilt.
+
+How do I do that, manually updating the state?
+
+To manually update the state of an individual `FileWidget`, you can use a `ValueNotifier` or a similar mechanism to track the selected state of each file. 
+
+Here's how you can do it:
+
+1. First, add a `ValueNotifier<bool>` to your `FileWidget` to keep track of its selected state.
+
+```dart
+class FileWidget extends StatefulWidget {
+  ...
+  final ValueNotifier<bool> isSelected;
+
+  FileWidget({
+    ...
+    required this.isSelected,
+  });
+  ...
+}
+```
+
+2. Then, in your `StoreConnector`, create a `ValueNotifier<bool>` for each file and pass it to the corresponding `FileWidget`.
+
+```dart
+StoreConnector<AppState, Store>(
+  converter: (store) => store,
+  builder: (context, store) {
+    ...
+    return GridView.builder(
+      ...
+      itemBuilder: (context, index) {
+        ValueNotifier<bool> isSelected = ValueNotifier<bool>(
+          isFileSelected(context, files[index]),
+        );
+
+        return FileWidget(
+          ...
+          isSelected: isSelected,
+        );
+      },
+    );
+  },
+);
+```
+
+3. In your `FileWidget`, listen to changes in `isSelected` and call `setState` when it changes.
+
+```dart
+class _FileWidgetState extends State<FileWidget> {
+  @override
+  void initState() {
+    super.initState();
+    widget.isSelected.addListener(_updateSelectedState);
+  }
+
+  @override
+  void dispose() {
+    widget.isSelected.removeListener(_updateSelectedState);
+    super.dispose();
+  }
+
+  void _updateSelectedState() {
+    setState(() {});
+  }
+
+  ...
+}
+```
+
+4. Finally, in the `onWillChange` callback of your `StoreConnector`, update the `isSelected` `ValueNotifier` of each `FileWidget` if the selected file list has changed.
+
+```dart
+StoreConnector<AppState, Store>(
+  converter: (store) => store,
+  onWillChange: (oldStore, newStore) {
+    if (oldStore.state.selectedFilesFirst != newStore.state.selectedFilesFirst ||
+        oldStore.state.selectedFilesSecond != newStore.state.selectedFilesSecond) {
+      // The selected file list has changed.
+      // Update the isSelected ValueNotifier of each FileWidget.
+      for (int i = 0; i < files.length; i++) {
+        files[i].isSelected.value = isFileSelected(context, files[i]);
+      }
+    }
+  },
+  builder: (context, store) {
+    ...
+  },
+);
+```
+
+This way, only the `FileWidget`s whose selected state has changed will be rebuilt.
