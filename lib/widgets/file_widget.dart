@@ -44,11 +44,11 @@ class FileWidget extends StatelessWidget {
     required this.windowIndex,
   }) : super(key: key);
 
-  toggleFileSelectionAction(FileViewModel fileViewModel) {
-    fileViewModel.isSelected = !fileViewModel.isSelected;
-    _log.info(
-        "Toggled file ${fileViewModel.file.path} selection. Currently it is ${fileViewModel.isSelected}");
-  }
+  // toggleFileSelectionAction(FileViewModel fileViewModel) {
+  //   fileViewModel.isSelected = !fileViewModel.isSelected;
+  //   _log.info(
+  //       "Toggled file ${fileViewModel.file.path} selection. Currently it is ${fileViewModel.isSelected}");
+  // }
 
   @override
   Widget build(BuildContext context) {

@@ -21,6 +21,29 @@ import '../resources/constants.dart';
 
 final Logger _log = Logger('StartView');
 
+class MainScreenViewModel {
+  final bool isSplit;
+  final List<FileSystemEntity> combinedClipboard;
+  final DirectoryBunch? firstBunch;
+  final DirectoryBunch? secondBunch;
+
+  MainScreenViewModel({
+    required this.isSplit,
+    required this.combinedClipboard,
+    required this.firstBunch,
+    required this.secondBunch,
+  });
+
+  static MainScreenViewModel fromStore(Store<AppState> store) {
+    return MainScreenViewModel(
+      isSplit: store.state.isSplit!,
+      combinedClipboard: store.state.combinedClipboard,
+      firstBunch: store.state.firstBunch,
+      secondBunch: store.state.secondBunch,
+    );
+  }
+}
+
 class StartView extends StatefulWidget {
   StartView({Key? key}) : super(key: key);
   final List<Permission> requiredPermissions = [
@@ -148,6 +171,171 @@ class _StartViewState extends State<StartView> {
     return store.dispatch(ClearClipBoardAction());
   }
 
+  void _handleSorting(String result) {
+    _log.info("Sorting by $result");
+    switch (result) {
+      case 'Name Ascending':
+        sortByName(true, store.state.filteredFiles);
+        break;
+      case 'Name Descending':
+        sortByName(false, store.state.filteredFiles);
+        break;
+      case 'Creation Date Ascending':
+        sortByCreationDate(true, store.state.filteredFiles);
+        break;
+      case 'Creation Date Descending':
+        sortByCreationDate(false, store.state.filteredFiles);
+        break;
+      case 'Modification Date Ascending':
+        sortByModificationDate(true, store.state.filteredFiles);
+        break;
+      case 'Modification Date Descending':
+        sortByModificationDate(false, store.state.filteredFiles);
+        break;
+    }
+  }
+
+  Future<void> deleteSelectedFilesHandler() async {
+    _log.info("Deleting selected files");
+    await store.dispatch(DeleteSelectedFilesAction());
+    Navigator.of(context).pop();
+    String targetPath;
+    if (store.state.activeChildWindow == 1) {
+      targetPath = store.state.firstBunch!.path;
+    } else {
+      targetPath = store.state.secondBunch!.path;
+    }
+    store.dispatch(LoadFilesAction(targetPath, store.state.activeChildWindow!));
+  }
+
+  PopupMenuButton<String> _buildPopupMenu() {
+    return PopupMenuButton<String>(
+      icon: Icon(
+        Icons.sort,
+        color: Theme.of(context).colorScheme.inversePrimary,
+      ), // Use an icon button
+      onSelected: _handleSorting,
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'Name Ascending',
+          child: Text('Name Ascending'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'Name Descending',
+          child: Text('Name Descending'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'Creation Date Ascending',
+          child: Text('Creation Date Ascending'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'Creation Date Descending',
+          child: Text('Creation Date Descending'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'Modification Date Ascending',
+          child: Text('Modification Date Ascending'),
+        ),
+        const PopupMenuItem<String>(
+          value: 'Modification Date Descending',
+          child: Text('Modification Date Descending'),
+        ),
+      ],
+    );
+  }
+
+  void _showDeleteDialog(
+      BuildContext context, List<FileSystemEntity> filesToDelete) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title:
+                const Text('Really Delete Files?', style: kDialogHeadingStyle),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  Text('Do you wish to delete these files permanenetly?',
+                      style: kDialogTextStyle),
+                  SizedBox(height: 10),
+                  ...filesToDelete
+                      .map((e) => Text(e.path, style: kDialogTextStyle)),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Yes', style: kButtonOkStyle),
+                onPressed: () async {
+                  await deleteSelectedFilesHandler();
+                },
+              ),
+              TextButton(
+                child: const Text('Cancel', style: kButtonCancelStyle),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        });
+  }
+
+  List<Widget> _buildAppBarActions() {
+    return [
+      areAnyFilesSelected()
+          ? IconButton(
+              onPressed: () {
+                _copyFilesToClipBoard();
+              },
+              icon: Icon(
+                Icons.file_copy_sharp,
+                color: Theme.of(context).colorScheme.inversePrimary,
+              ))
+          : Container(),
+      isClipBoardNotEmpty()
+          ? IconButton(
+              onPressed: () {
+                _log.info("Pressed paste");
+                showPasteDialog(context, store);
+              },
+              icon: Icon(
+                Icons.content_paste_sharp,
+                color: Theme.of(context).colorScheme.inversePrimary,
+              ),
+            )
+          : Container(),
+      areAnyFilesSelected()
+          ? IconButton(
+              onPressed: () {
+                _log.info("Pressed delete");
+                _showDeleteDialog(
+                    context,
+                    store.state.activeChildWindow == 1
+                        ? store.state.selectedFilesFirst!
+                        : store.state.selectedFilesSecond!);
+              },
+              icon: Icon(
+                Icons.delete,
+                color: Colors.red,
+              ))
+          : Container(),
+      IconButton(
+        onPressed: () {
+          _log.info("Pressed split screen");
+          store.dispatch(UpdateScreenSplitAction(!store.state.isSplit!));
+        },
+        icon: Icon(
+          store.state.isSplit != true
+              ? Icons.splitscreen_outlined
+              : Icons.splitscreen,
+          color: Theme.of(context).colorScheme.inversePrimary,
+        ),
+      ),
+      _buildPopupMenu(),
+    ];
+  }
+
   Future<void> showPasteDialog(BuildContext context, Store store) async {
     return showDialog(
         context: context,
@@ -223,11 +411,25 @@ class _StartViewState extends State<StartView> {
         });
   }
 
+  Widget imageAvatar(FileSystemEntity item) {
+    String extension = Path.extension(item.path).toLowerCase();
+    bool isImage = ['.jpg', '.jpeg', '.png', '.gif'].contains(extension);
+    return ListTile(
+      title: Text(item.path),
+      leading: isImage
+          ? Image.file(
+              File(item.path),
+            )
+          : Container(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StoreConnector<AppState, Store>(
-      converter: (store) => store,
-      builder: (context, store) {
+    return StoreConnector<AppState, MainScreenViewModel>(
+      converter: MainScreenViewModel.fromStore,
+      distinct: true, // Only call builder if the ViewModel changes
+      builder: (context, viewModel) {
         return Scaffold(
           key: _scaffoldKey,
           appBar: AppBar(
@@ -238,170 +440,7 @@ class _StartViewState extends State<StartView> {
                 color: Colors.white,
               ),
             ),
-            actions: [
-              areAnyFilesSelected()
-                  ? IconButton(
-                      onPressed: () {
-                        _copyFilesToClipBoard();
-                      },
-                      icon: Icon(
-                        Icons.file_copy_sharp,
-                        color: Theme.of(context).colorScheme.inversePrimary,
-                      ))
-                  : Container(),
-              isClipBoardNotEmpty()
-                  ? IconButton(
-                      onPressed: () {
-                        _log.info("Pressed paste");
-                        showPasteDialog(context, store);
-                      },
-                      icon: Icon(
-                        Icons.content_paste_sharp,
-                        color: Theme.of(context).colorScheme.inversePrimary,
-                      ),
-                    )
-                  : Container(),
-              areAnyFilesSelected()
-                  ? IconButton(
-                      onPressed: () {
-                        _log.info("Pressed delete");
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              _log.info("state is ${store.state}");
-                              List<FileSystemEntity> filesToDelete = [];
-                              filesToDelete = store.state.activeChildWindow == 1
-                                  ? store.state.selectedFilesFirst!
-                                  : store.state.selectedFilesSecond!;
-                              _log.info("files to delete are $filesToDelete");
-                              return AlertDialog(
-                                title: const Text(
-                                  'Really Delete Files?',
-                                  style: kDialogHeadingStyle,
-                                ),
-                                content: SingleChildScrollView(
-                                  child: ListBody(
-                                    children: <Widget>[
-                                      Text(
-                                          'Do you wish to delete these files permanenetly?',
-                                          style: kDialogTextStyle),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      ...filesToDelete.map(
-                                        (e) => Text(
-                                          e.path,
-                                          style: kDialogTextStyle,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    child: const Text('Yes',
-                                        style: kButtonOkStyle),
-                                    onPressed: () async {
-                                      await store.dispatch(
-                                          DeleteSelectedFilesAction());
-                                      Navigator.of(context).pop();
-                                      String targetPath;
-                                      if (store.state.activeChildWindow == 1) {
-                                        targetPath =
-                                            store.state.firstBunch!.path;
-                                      } else {
-                                        targetPath =
-                                            store.state.secondBunch!.path;
-                                      }
-                                      store.dispatch(LoadFilesAction(targetPath,
-                                          store.state.activeChildWindow!));
-                                    },
-                                  ),
-                                  TextButton(
-                                    child: const Text(
-                                      'Cancel',
-                                      style: kButtonCancelStyle,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                  ),
-                                ],
-                              );
-                            });
-                      },
-                      icon: Icon(
-                        Icons.delete,
-                        color: Colors.red,
-                      ))
-                  : Container(),
-              IconButton(
-                onPressed: () {
-                  _log.info("Pressed split screen");
-                  store.dispatch(UpdateScreenSplitAction(!store.state.isSplit));
-                },
-                icon: Icon(
-                  store.state.isSplit != true
-                      ? Icons.splitscreen_outlined
-                      : Icons.splitscreen,
-                  color: Theme.of(context).colorScheme.inversePrimary,
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.sort,
-                  color: Theme.of(context).colorScheme.inversePrimary,
-                ), // Use an icon button
-                onSelected: (String result) {
-                  switch (result) {
-                    case 'Name Ascending':
-                      sortByName(true, store.state.filteredFiles);
-                      break;
-                    case 'Name Descending':
-                      sortByName(false, store.state.filteredFiles);
-                      break;
-                    case 'Creation Date Ascending':
-                      sortByCreationDate(true, store.state.filteredFiles);
-                      break;
-                    case 'Creation Date Descending':
-                      sortByCreationDate(false, store.state.filteredFiles);
-                      break;
-                    case 'Modification Date Ascending':
-                      sortByModificationDate(true, store.state.filteredFiles);
-                      break;
-                    case 'Modification Date Descending':
-                      sortByModificationDate(false, store.state.filteredFiles);
-                      break;
-                  }
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'Name Ascending',
-                    child: Text('Name Ascending'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'Name Descending',
-                    child: Text('Name Descending'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'Creation Date Ascending',
-                    child: Text('Creation Date Ascending'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'Creation Date Descending',
-                    child: Text('Creation Date Descending'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'Modification Date Ascending',
-                    child: Text('Modification Date Ascending'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'Modification Date Descending',
-                    child: Text('Modification Date Descending'),
-                  ),
-                ],
-              ),
-            ],
+            actions: _buildAppBarActions(),
           ),
           body: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
@@ -412,7 +451,6 @@ class _StartViewState extends State<StartView> {
                   _draggableTop -
                   50; //Final subtraction is for the bottom nav
               return Stack(children: [
-                // This is the first child
                 Positioned(
                   top: _top,
                   left: 0,
@@ -432,7 +470,7 @@ class _StartViewState extends State<StartView> {
                   left: 0,
                   right: 0,
                   top: _top + _topInfoBarHeight,
-                  height: store.state.isSplit
+                  height: store.state.isSplit!
                       ? _draggableTop - 50
                       : totalHeight - _topInfoBarHeight,
                   child: store.state.firstBunch != null
@@ -441,7 +479,7 @@ class _StartViewState extends State<StartView> {
                         )
                       : Container(),
                 ),
-                store.state.isSplit
+                store.state.isSplit!
                     ? Positioned(
                         top: _draggableTop,
                         left: 0,
@@ -470,7 +508,7 @@ class _StartViewState extends State<StartView> {
                         ),
                       )
                     : Container(),
-                store.state.isSplit
+                store.state.isSplit!
                     ? Positioned(
                         top: _draggableTop +
                             _draggableBarHeight, // Adding the height of the draggable bar
@@ -507,27 +545,9 @@ class _StartViewState extends State<StartView> {
                         ListView.builder(
                           itemCount: store.state.combinedClipboard.length,
                           itemBuilder: (BuildContext context, int index) {
-                            FileSystemEntity item =
-                                store.state.combinedClipboard[index];
-                            String extension =
-                                Path.extension(item.path).toLowerCase();
-
-                            bool isImage = ['.jpg', '.jpeg', '.png', '.gif']
-                                .contains(extension);
-
-                            return ListTile(
-                              title: Text(item.path),
-                              leading: isImage
-                                  ? Image.file(
-                                      File(item.path),
-                                      // width: 50,
-                                    )
-                                  : null,
-                            );
+                            return imageAvatar(
+                                store.state.combinedClipboard[index]);
                           },
-                          // shrinkWrap: true, // Add this line
-                          // physics:
-                          //     NeverScrollableScrollPhysics(), // And this line
                         ),
                         Align(
                           alignment: Alignment.bottomCenter,
@@ -535,7 +555,6 @@ class _StartViewState extends State<StartView> {
                             padding: const EdgeInsets.only(bottom: 8.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              // crossAxisAlignment: CrossAxisAlignment.end,
                               children: <Widget>[
                                 ElevatedButton(
                                   onPressed: () {

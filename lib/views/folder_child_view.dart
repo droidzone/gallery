@@ -81,6 +81,63 @@ class _FolderChildViewState extends State<FolderChildView> {
     _buildFileFilter();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, FilesViewModel>(
+      converter: (store) => FilesViewModel.fromStore(store, widget.windowIndex),
+      builder: (context, viewModel) {
+        return Stack(
+          children: [
+            Scaffold(
+              body: viewModel.files.isEmpty
+                  ? Center(
+                      child: Text('No files found'),
+                    )
+                  : InkWell(
+                      onTap: () {
+                        StoreProvider.of<AppState>(context).dispatch(
+                            UpdateActiveChildWindow(widget.windowIndex));
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          color: viewModel.isSplit &&
+                                  widget.windowIndex ==
+                                      viewModel.activeChildWindow
+                              ? Colors.lime[50]
+                              : Colors.white,
+                          child: GridView.builder(
+                            padding: EdgeInsets.only(bottom: 50, top: 20),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    crossAxisSpacing: 50,
+                                    mainAxisSpacing: 20),
+                            itemCount: viewModel.files.length,
+                            itemBuilder: (context, index) {
+                              if (isMediaFile(viewModel.files[index])) {
+                                return FileWidget(
+                                  file: viewModel.files[index],
+                                  windowIndex: widget.windowIndex,
+                                );
+                              } else {
+                                return DirectoryWidget(
+                                  directory: viewModel.files[index],
+                                  windowIndex: widget.windowIndex,
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void updateState(DirectoryBunch _newBunch) {
     if (widget.windowIndex == 1) {
       _log.info("We are in the first window");
@@ -150,17 +207,11 @@ class _FolderChildViewState extends State<FolderChildView> {
   _longPressFile(file) {
     _log.info("Handling long press for file $file");
     store.dispatch(SelectFileAction(file, widget.windowIndex));
-    // _handleFileSelection(file);
     return;
   }
 
   _singleTapFile(context, file) {
     _log.info("Tapped file");
-    // if (selectedFiles.isNotEmpty) {
-    //   _handleFileSelection(file);
-    //   return;
-    // }
-
     if (widget.windowIndex == 1) {
       _log.info("We are in the first window");
       if (store.state.selectedFilesFirst!.isNotEmpty) {
@@ -189,144 +240,9 @@ class _FolderChildViewState extends State<FolderChildView> {
   }
 
   bool isFileSelected(FileSystemEntity file) {
-    // if (widget.windowIndex == 1) {
-    //   return store.state.selectedFilesFirst!.contains(file);
-    // } else {
-    //   return store.state.selectedFilesSecond!.contains(file);
-    // }
     if (selectedFiles.contains(file)) {
       return true;
     }
     return false;
-  }
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return StoreConnector<AppState, Store>(
-  //     converter: (store) => store,
-  //     builder: (context, store) {
-  //       List<FileSystemEntity> files = [];
-  //       List<FileSystemEntity> allfiles = widget.windowIndex == 1
-  //           ? store.state.firstFiles
-  //           : store.state.secondFiles;
-  //       List<FileSystemEntity> mediaFiles =
-  //           allfiles.where((file) => isMediaFile(file)).toList();
-  //       if (store.state.mainviewCurrentTab == "Media") {
-  //         files = mediaFiles;
-  //       } else {
-  //         files = allfiles;
-  //       }
-  //       return Stack(
-  //         children: [
-  //           Scaffold(
-  //             body: files.isEmpty
-  //                 ? Center(
-  //                     child: Text('No files found'),
-  //                   )
-  //                 : InkWell(
-  //                     onTap: () {
-  //                       store.dispatch(
-  //                           UpdateActiveChildWindow(widget.windowIndex));
-  //                     },
-  //                     child: Padding(
-  //                       padding: const EdgeInsets.all(8.0),
-  //                       child: Container(
-  //                         color: store.state.isSplit &&
-  //                                 widget.windowIndex ==
-  //                                     store.state.activeChildWindow
-  //                             ? Colors.lime[50]
-  //                             : Colors.white,
-  //                         child: GridView.builder(
-  //                           padding: EdgeInsets.only(bottom: 50, top: 20),
-  //                           gridDelegate:
-  //                               SliverGridDelegateWithFixedCrossAxisCount(
-  //                                   crossAxisCount: 3,
-  //                                   crossAxisSpacing: 50,
-  //                                   mainAxisSpacing: 20),
-  //                           itemCount: files.length,
-  //                           itemBuilder: (context, index) {
-  //                             if (isMediaFile(files[index])) {
-  //                               // It is a regular file, not a directory
-  //                               return FileWidget(
-  //                                 file: files[index],
-  //                                 // isSelected: isFileSelected(files[index]),
-  //                                 windowIndex: widget.windowIndex,
-  //                                 onTap: _singleTapFile,
-  //                                 onLongPress: _longPressFile,
-  //                               );
-  //                             } else {
-  //                               // It is a directory
-  //                               return DirectoryWidget(
-  //                                 directory: files[index],
-  //                                 windowIndex: widget.windowIndex,
-  //                               );
-  //                             }
-  //                           },
-  //                         ),
-  //                       ),
-  //                     ),
-  //                   ),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
-  @override
-  Widget build(BuildContext context) {
-    return StoreConnector<AppState, FilesViewModel>(
-      converter: (store) => FilesViewModel.fromStore(store, widget.windowIndex),
-      builder: (context, viewModel) {
-        return Stack(
-          children: [
-            Scaffold(
-              body: viewModel.files.isEmpty
-                  ? Center(
-                      child: Text('No files found'),
-                    )
-                  : InkWell(
-                      onTap: () {
-                        StoreProvider.of<AppState>(context).dispatch(
-                            UpdateActiveChildWindow(widget.windowIndex));
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                          color: viewModel.isSplit &&
-                                  widget.windowIndex ==
-                                      viewModel.activeChildWindow
-                              ? Colors.lime[50]
-                              : Colors.white,
-                          child: GridView.builder(
-                            padding: EdgeInsets.only(bottom: 50, top: 20),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    crossAxisSpacing: 50,
-                                    mainAxisSpacing: 20),
-                            itemCount: viewModel.files.length,
-                            itemBuilder: (context, index) {
-                              if (isMediaFile(viewModel.files[index])) {
-                                return FileWidget(
-                                  file: viewModel.files[index],
-                                  windowIndex: widget.windowIndex,
-                                );
-                              } else {
-                                return DirectoryWidget(
-                                  directory: viewModel.files[index],
-                                  windowIndex: widget.windowIndex,
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-            ),
-          ],
-        );
-      },
-    );
   }
 }
