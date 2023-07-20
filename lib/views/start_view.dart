@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:gallery/helpers/utils.dart';
+import 'package:gallery/models/mainscreen_view_model.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
@@ -20,29 +21,6 @@ import 'package:path/path.dart' as Path;
 import '../resources/constants.dart';
 
 final Logger _log = Logger('StartView');
-
-class MainScreenViewModel {
-  final bool isSplit;
-  final List<FileSystemEntity> combinedClipboard;
-  final DirectoryBunch? firstBunch;
-  final DirectoryBunch? secondBunch;
-
-  MainScreenViewModel({
-    required this.isSplit,
-    required this.combinedClipboard,
-    required this.firstBunch,
-    required this.secondBunch,
-  });
-
-  static MainScreenViewModel fromStore(Store<AppState> store) {
-    return MainScreenViewModel(
-      isSplit: store.state.isSplit!,
-      combinedClipboard: store.state.combinedClipboard,
-      firstBunch: store.state.firstBunch,
-      secondBunch: store.state.secondBunch,
-    );
-  }
-}
 
 class StartView extends StatefulWidget {
   StartView({Key? key}) : super(key: key);
@@ -86,6 +64,166 @@ class _StartViewState extends State<StartView> {
     });
     _listMediaDirectories();
     store = StoreProvider.of<AppState>(context, listen: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StoreConnector<AppState, MainScreenViewModel>(
+      converter: MainScreenViewModel.fromStore,
+      distinct: true, // Only call builder if the ViewModel changes
+      builder: (context, viewModel) {
+        return Scaffold(
+          key: _scaffoldKey,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            title: const Text(
+              'Super Gallery',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
+            actions: _buildAppBarActions(),
+          ),
+          body: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final totalHeight = constraints.maxHeight;
+              topChildHeight =
+                  (totalHeight - _topInfoBarHeight - _draggableBarHeight) / 2;
+              bottomChildHeight = totalHeight -
+                  _draggableTop -
+                  50; //Final subtraction is for the bottom nav
+              return Stack(children: [
+                Positioned(
+                  top: _top,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    color: Colors.grey[400],
+                    height: _topInfoBarHeight, // Standard AppBar height
+                    child: store.state.firstBunch != null
+                        ? InfoBar(
+                            windowIndex: 1,
+                            scaffoldkey: _scaffoldKey,
+                          )
+                        : Container(),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: _top + _topInfoBarHeight,
+                  height: store.state.isSplit!
+                      ? _draggableTop - 50
+                      : totalHeight - _topInfoBarHeight,
+                  child: store.state.firstBunch != null
+                      ? FolderChildView(
+                          windowIndex: 1,
+                        )
+                      : Container(),
+                ),
+                store.state.isSplit!
+                    ? Positioned(
+                        top: _draggableTop,
+                        left: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onVerticalDragUpdate: (DragUpdateDetails details) {
+                            setState(() {
+                              double delta = details.delta.dy;
+                              _draggableTop += delta;
+                              if (_draggableTop < (_top + _topInfoBarHeight)) {
+                                _draggableTop = _top + _topInfoBarHeight;
+                              }
+                            });
+                          },
+                          child: Container(
+                            color: Colors.grey[400],
+                            height:
+                                _draggableBarHeight, // Standard AppBar height
+                            child: Center(
+                              child: InfoBar(
+                                windowIndex: 2,
+                                scaffoldkey: _scaffoldKey,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    : Container(),
+                store.state.isSplit!
+                    ? Positioned(
+                        top: _draggableTop +
+                            _draggableBarHeight, // Adding the height of the draggable bar
+                        left: 0,
+                        right: 0,
+                        height: bottomChildHeight,
+                        child: FolderChildView(
+                          windowIndex: 2,
+                        ),
+                      )
+                    : Container(),
+              ]);
+            },
+          ),
+          bottomNavigationBar: const BottomNavigation(),
+          endDrawer: Drawer(
+            child: Container(
+              color: Colors.purple[100],
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 100,
+                    child: DrawerHeader(
+                      child: Text(
+                        'Clipboard',
+                        style: kDrawerHeaderStyle,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Stack(
+                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ListView.builder(
+                          itemCount: store.state.combinedClipboard.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            return imageAvatar(
+                                store.state.combinedClipboard[index]);
+                          },
+                        ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: <Widget>[
+                                ElevatedButton(
+                                  onPressed: () {
+                                    clearClipBoard();
+                                  },
+                                  child: Text('Clear'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    showPasteDialog(context, store);
+                                  },
+                                  child: Text('Paste'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _listMediaDirectories() async {
@@ -421,166 +559,6 @@ class _StartViewState extends State<StartView> {
               File(item.path),
             )
           : Container(),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StoreConnector<AppState, MainScreenViewModel>(
-      converter: MainScreenViewModel.fromStore,
-      distinct: true, // Only call builder if the ViewModel changes
-      builder: (context, viewModel) {
-        return Scaffold(
-          key: _scaffoldKey,
-          appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            title: const Text(
-              'Super Gallery',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            actions: _buildAppBarActions(),
-          ),
-          body: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final totalHeight = constraints.maxHeight;
-              topChildHeight =
-                  (totalHeight - _topInfoBarHeight - _draggableBarHeight) / 2;
-              bottomChildHeight = totalHeight -
-                  _draggableTop -
-                  50; //Final subtraction is for the bottom nav
-              return Stack(children: [
-                Positioned(
-                  top: _top,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Colors.grey[400],
-                    height: _topInfoBarHeight, // Standard AppBar height
-                    child: store.state.firstBunch != null
-                        ? InfoBar(
-                            windowIndex: 1,
-                            scaffoldkey: _scaffoldKey,
-                          )
-                        : Container(),
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: _top + _topInfoBarHeight,
-                  height: store.state.isSplit!
-                      ? _draggableTop - 50
-                      : totalHeight - _topInfoBarHeight,
-                  child: store.state.firstBunch != null
-                      ? FolderChildView(
-                          windowIndex: 1,
-                        )
-                      : Container(),
-                ),
-                store.state.isSplit!
-                    ? Positioned(
-                        top: _draggableTop,
-                        left: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onVerticalDragUpdate: (DragUpdateDetails details) {
-                            setState(() {
-                              double delta = details.delta.dy;
-                              _draggableTop += delta;
-                              if (_draggableTop < (_top + _topInfoBarHeight)) {
-                                _draggableTop = _top + _topInfoBarHeight;
-                              }
-                            });
-                          },
-                          child: Container(
-                            color: Colors.grey[400],
-                            height:
-                                _draggableBarHeight, // Standard AppBar height
-                            child: Center(
-                              child: InfoBar(
-                                windowIndex: 2,
-                                scaffoldkey: _scaffoldKey,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(),
-                store.state.isSplit!
-                    ? Positioned(
-                        top: _draggableTop +
-                            _draggableBarHeight, // Adding the height of the draggable bar
-                        left: 0,
-                        right: 0,
-                        height: bottomChildHeight,
-                        child: FolderChildView(
-                          windowIndex: 2,
-                        ),
-                      )
-                    : Container(),
-              ]);
-            },
-          ),
-          bottomNavigationBar: const BottomNavigation(),
-          endDrawer: Drawer(
-            child: Container(
-              color: Colors.purple[100],
-              child: Column(
-                children: [
-                  Container(
-                    height: 100,
-                    child: DrawerHeader(
-                      child: Text(
-                        'Clipboard',
-                        style: kDrawerHeaderStyle,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Stack(
-                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        ListView.builder(
-                          itemCount: store.state.combinedClipboard.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            return imageAvatar(
-                                store.state.combinedClipboard[index]);
-                          },
-                        ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: <Widget>[
-                                ElevatedButton(
-                                  onPressed: () {
-                                    clearClipBoard();
-                                  },
-                                  child: Text('Clear'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    showPasteDialog(context, store);
-                                  },
-                                  child: Text('Paste'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

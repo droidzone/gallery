@@ -22,8 +22,8 @@ void loadFilesMiddleware(
     final Directory directory = Directory(action.path);
 
     try {
-      List<FileSystemEntity> _tmpFiles = directory.listSync();
-      store.dispatch(UpdateFilesAction(_tmpFiles, action.windowIndex));
+      List<FileSystemEntity> tmpFiles = directory.listSync();
+      store.dispatch(UpdateFilesAction(tmpFiles, action.windowIndex));
     } on Exception catch (e) {
       _log.info('An error occurred while accessing the directory: $e');
     }
@@ -34,8 +34,8 @@ void loadFilesMiddleware(
     final Directory directory = Directory(action.path);
 
     try {
-      List<FileSystemEntity> _tmpFiles = directory.listSync();
-      _log.info("Files in directory, ${action.path} include: $_tmpFiles");
+      List<FileSystemEntity> tmpFiles = directory.listSync();
+      _log.info("Files in directory, ${action.path} include: $tmpFiles");
       String dirName = p.basename(action.path);
       store.dispatch(
         UpdateDirectoryBunch(
@@ -47,7 +47,7 @@ void loadFilesMiddleware(
       );
       _log.info(
           "After dispatching UpdateDirectoryBunch, state is ${store.state}");
-      store.dispatch(UpdateFilesAction(_tmpFiles, action.windowIndex));
+      store.dispatch(UpdateFilesAction(tmpFiles, action.windowIndex));
       return Future.value('Success');
     } on Exception catch (e) {
       _log.info('An error occurred while accessing the directory: $e');
@@ -111,12 +111,12 @@ void loadFilesMiddleware(
   } else if (action is DeleteSelectedFilesAction) {
     _log.info("DeleteSelectedFiles..");
     int index = store.state.activeChildWindow!;
-    _log.info("index: ${index}");
+    _log.info("index: $index");
     List<FileSystemEntity> files = (index == 1)
         ? List.from(store.state.selectedFilesFirst!)
         : List.from(store.state.selectedFilesSecond!);
     _log.info("files: $files");
-    files.forEach((element) {
+    for (var element in files) {
       _log.info("Deleting file: $element");
       element.deleteSync(recursive: true);
       _log.info("Deleted file: $element");
@@ -125,7 +125,7 @@ void loadFilesMiddleware(
       } else if (store.state.activeChildWindow == 2) {
         store.state.selectedFilesSecond!.remove(element);
       }
-    });
+    }
   }
   next(action);
 }

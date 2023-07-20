@@ -48,7 +48,7 @@ class FileThumbnail extends StatelessWidget {
                     height: 100,
                   );
                 } else {
-                  return Text('Loading...');
+                  return const Text('Loading...');
                 }
               },
             ),

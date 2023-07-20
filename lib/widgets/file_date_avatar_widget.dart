@@ -18,14 +18,14 @@ class FileDateAvatarWidget extends StatelessWidget {
         children: [
           Text(
             formattedDD(file),
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 12,
             ),
           ),
           Text(
             formattedMonth(file),
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 12,
             ),

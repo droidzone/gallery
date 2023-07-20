@@ -90,8 +90,8 @@ String _formattedDate(file) {
   return formattedDate;
 }
 
-String formattedDD(_file) {
-  DateTime modificationDate = _file.statSync().modified;
+String formattedDD(file) {
+  DateTime modificationDate = file.statSync().modified;
 
   String formattedDate = DateFormat('dd').format(modificationDate);
   return formattedDate;

@@ -1,8 +1,8 @@
 // ignore_for_file: prefer_const_constructors
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:gallery/models/files_view_model.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/views/picture_view.dart';
@@ -12,11 +12,8 @@ import 'dart:io';
 
 import 'package:gallery/structure/directory_bunch.dart';
 import 'package:gallery/widgets/directory_widget.dart';
-import 'package:gallery/widgets/file_thumbnail_widget.dart';
 import 'package:gallery/widgets/file_widget.dart';
 import 'package:logging/logging.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:path/path.dart' as p;
 import 'package:redux/redux.dart';
 import 'package:flutter/material.dart';
@@ -24,35 +21,8 @@ import 'package:gallery/helpers/utils.dart';
 
 final Logger _log = Logger('FolderChildView');
 
-class FilesViewModel {
-  final List<FileSystemEntity> files;
-  final bool isSplit;
-  final int activeChildWindow;
-
-  FilesViewModel({
-    required this.files,
-    required this.isSplit,
-    required this.activeChildWindow,
-  });
-
-  static FilesViewModel fromStore(Store<AppState> store, int windowIndex) {
-    List<FileSystemEntity>? allfiles =
-        windowIndex == 1 ? store.state.firstFiles : store.state.secondFiles;
-    List<FileSystemEntity> mediaFiles =
-        allfiles!.where((file) => isMediaFile(file)).toList();
-    List<FileSystemEntity>? files =
-        store.state.mainviewCurrentTab == "Media" ? mediaFiles : allfiles;
-
-    return FilesViewModel(
-      files: files,
-      isSplit: store.state.isSplit!,
-      activeChildWindow: store.state.activeChildWindow!,
-    );
-  }
-}
-
 class FolderChildView extends StatefulWidget {
-  FolderChildView({
+  const FolderChildView({
     Key? key,
     required this.windowIndex,
   }) : super(key: key);
@@ -63,7 +33,7 @@ class FolderChildView extends StatefulWidget {
 }
 
 class _FolderChildViewState extends State<FolderChildView> {
-  List<FileSystemEntity> _FilteredFiles = [];
+  final List<FileSystemEntity> _FilteredFiles = [];
   late Store<AppState> store;
   DirectoryBunch? directoryBunch;
   final Logger _log = Logger('FolderChildView');
@@ -138,13 +108,13 @@ class _FolderChildViewState extends State<FolderChildView> {
     );
   }
 
-  void updateState(DirectoryBunch _newBunch) {
+  void updateState(DirectoryBunch newBunch) {
     if (widget.windowIndex == 1) {
       _log.info("We are in the first window");
-      store.dispatch(UpdateDirectoryBunchFirst(_newBunch));
+      store.dispatch(UpdateDirectoryBunchFirst(newBunch));
     } else {
       _log.info("We are in the second window");
-      store.dispatch(UpdateDirectoryBunchSecond(_newBunch));
+      store.dispatch(UpdateDirectoryBunchSecond(newBunch));
     }
   }
 

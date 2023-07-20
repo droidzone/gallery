@@ -125,7 +125,7 @@ class DeleteSelectedFilesAction {
 
 class ToggleFileSelectionAction {
   final FileSystemEntity file;
-  final int windowIndex;
+  // final int windowIndex;
 
-  ToggleFileSelectionAction(this.file, this.windowIndex);
+  ToggleFileSelectionAction(this.file);
 }

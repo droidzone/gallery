@@ -5,7 +5,6 @@ import 'package:flutter_redux/flutter_redux.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:gallery/structure/directory_bunch.dart';
-import 'package:gallery/structure/directory_chip.dart';
 import 'package:logging/logging.dart';
 import 'package:redux/redux.dart';
 
@@ -139,7 +138,7 @@ class InfoBar extends StatelessWidget {
         );
       }
 
-      rootPath += directories[i] + "/";
+      rootPath += "${directories[i]}/";
     }
 
     return Container(

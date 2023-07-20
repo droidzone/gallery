@@ -22,6 +22,7 @@ class AppState {
   List<FileSystemEntity>? clipboardFirst;
   List<FileSystemEntity>? clipboardSecond;
   int? filesLeftToCopy;
+  List<FileSystemEntity>? selection;
 
   AppState({
     this.currentView,
@@ -43,6 +44,7 @@ class AppState {
     this.clipboardFirst,
     this.clipboardSecond,
     this.filesLeftToCopy,
+    this.selection,
   });
 
   AppState copyWith({
@@ -64,6 +66,7 @@ class AppState {
     List<FileSystemEntity>? filesCopiedForSecond,
     List<FileSystemEntity>? selectedFirst,
     List<FileSystemEntity>? selectedSecond,
+    List<FileSystemEntity>? selectedFiles,
   }) {
     // print("Before copyWith, current firstFiles is $firstFiles");
     return AppState(
@@ -85,6 +88,7 @@ class AppState {
       secondFiles: filesSecond != null ? List.from(filesSecond) : secondFiles,
       clipboardFirst: filesCopiedForFirst ?? clipboardFirst,
       clipboardSecond: filesCopiedForSecond ?? clipboardSecond,
+      selection: selectedFiles ?? selection,
     );
   }
 
@@ -97,5 +101,16 @@ class AppState {
       combined.addAll(clipboardSecond!);
     }
     return combined;
+  }
+
+  List<FileSystemEntity>? get selectedFiles {
+    // List<FileSystemEntity> selected = [];
+    // if (selectedFilesFirst != null) {
+    //   selected.addAll(selectedFilesFirst!);
+    // }
+    // if (selectedFilesSecond != null) {
+    //   selected.addAll(selectedFilesSecond!);
+    // }
+    return selection;
   }
 }

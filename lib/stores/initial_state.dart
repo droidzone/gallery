@@ -15,4 +15,5 @@ AppState initialState = AppState(
   secondFiles: [],
   clipboardFirst: [],
   clipboardSecond: [],
+  selection: [],
 );

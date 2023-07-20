@@ -76,25 +76,31 @@ AppState _toggleFileSelection(
     AppState state, ToggleFileSelectionAction action) {
   _log.info("_toggleFileSelection reducer");
   _log.info("action.file: ${action.file}");
-  if (action.windowIndex == 1) {
-    if (state.selectedFilesFirst!.contains(action.file)) {
-      state.selectedFilesFirst!.remove(action.file);
-    } else {
-      state.selectedFilesFirst!.add(action.file);
-    }
-    return state.copyWith(
-      selectedFirst: state.selectedFilesFirst,
-    );
+  if (state.selection!.contains(action.file)) {
+    state.selection!.remove(action.file);
   } else {
-    if (state.selectedFilesSecond!.contains(action.file)) {
-      state.selectedFilesSecond!.remove(action.file);
-    } else {
-      state.selectedFilesSecond!.add(action.file);
-    }
-    return state.copyWith(
-      selectedSecond: state.selectedFilesSecond,
-    );
+    state.selection!.add(action.file);
   }
+  // if (action.windowIndex == 1) {
+  //   if (state.selectedFilesFirst!.contains(action.file)) {
+  //     state.selectedFilesFirst!.remove(action.file);
+  //   } else {
+  //     state.selectedFilesFirst!.add(action.file);
+  //   }
+  //   return state.copyWith(
+  //     selectedFirst: state.selectedFilesFirst,
+  //   );
+  // } else {
+  //   if (state.selectedFilesSecond!.contains(action.file)) {
+  //     state.selectedFilesSecond!.remove(action.file);
+  //   } else {
+  //     state.selectedFilesSecond!.add(action.file);
+  //   }
+  //   return state.copyWith(
+  //     selectedSecond: state.selectedFilesSecond,
+  //   );
+  // }
+  return state.copyWith(selectedFiles: state.selection);
 }
 
 AppState _handleSelectDeselctFileAction(AppState state, action) {
@@ -247,10 +253,10 @@ List<FileSystemEntity> getUpdatedSelectedFiles(
 
 List<FileSystemEntity> updateClipboard(
     List<FileSystemEntity> selectedFiles, List<FileSystemEntity> clipboard) {
-  selectedFiles.forEach((element) {
+  for (var element in selectedFiles) {
     if (!clipboard.contains(element)) {
       clipboard.add(element);
     }
-  });
+  }
   return clipboard;
 }
