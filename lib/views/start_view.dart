@@ -55,6 +55,7 @@ class _StartViewState extends State<StartView> {
   @override
   void initState() {
     super.initState();
+    _log.info("Init state");
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _draggableTop = (MediaQuery.of(context).size.height -
               _topInfoBarHeight -
@@ -234,6 +235,7 @@ class _StartViewState extends State<StartView> {
   }
 
   void _listMediaDirectories() async {
+    _log.info("Listing media directories");
     await getRequiredPermissions(widget.requiredPermissions);
     Directory? dir = await getExternalStorageDirectory();
     _log.info("App Storage Directory: $dir");
@@ -262,13 +264,15 @@ class _StartViewState extends State<StartView> {
     );
     _log.info("Setting starting directory to ${tmpFirst.name}");
     var store = StoreProvider.of<AppState>(context, listen: false);
-    await store.dispatch(UpdateDirectoryBunchFirst(tmpFirst));
-    await store.dispatch(UpdateDirectoryBunchSecond(tmpFirst));
+    // await store.dispatch(UpdateDirectoryBunchFirst(tmpFirst));
+    await store.dispatch(ChangeDirectoryAction(tmpFirst.path, 1));
+    // await store.dispatch(UpdateDirectoryBunchSecond(tmpFirst));
 
     setState(() {
       directories = tmpDirectoryList;
       directorybunchFirst = tmpFirst;
-      directorybunchSecond = directorybunchFirst;
+      // directorybunchSecond = directorybunchFirst;
+      // TODO: Remove setting Secondbunch to firstbunch
     });
   }
 

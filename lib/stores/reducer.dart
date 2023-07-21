@@ -28,7 +28,7 @@ AppState updateReducer(AppState state, action) {
       return state.copyWith(currentDirSecond: action.currentDirSecond);
     case UpdateDirectoryBunchFirst:
       _log.info("UpdateDirectoryBunchFirst reducer");
-      _log.info("action.bunchFirst: ${action.bunchFirst.path}");
+      _log.info("bunchFirst directory: ${action.bunchFirst.path}");
       return state.copyWith(bunchFirst: action.bunchFirst);
     case UpdateDirectoryBunchSecond:
       _log.info("UpdateDirectoryBunchSecond reducer");

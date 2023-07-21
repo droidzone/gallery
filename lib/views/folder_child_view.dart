@@ -33,10 +33,9 @@ class FolderChildView extends StatefulWidget {
 }
 
 class _FolderChildViewState extends State<FolderChildView> {
-  final List<FileSystemEntity> _FilteredFiles = [];
-  late Store<AppState> store;
+  // final List<FileSystemEntity> _FilteredFiles = [];ß
+  // late Store<AppState> store;
   DirectoryBunch? directoryBunch;
-  final Logger _log = Logger('FolderChildView');
   List<FileSystemEntity> selectedFiles = [];
 
   @override
@@ -47,7 +46,7 @@ class _FolderChildViewState extends State<FolderChildView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    store = StoreProvider.of<AppState>(context, listen: false);
+    // Store<AppState> store = StoreProvider.of<AppState>(context, listen: false);
     _buildFileFilter();
   }
 
@@ -67,6 +66,8 @@ class _FolderChildViewState extends State<FolderChildView> {
       //  shouldUpdate: (previousViewModel, newViewModel) =>
       //     previousViewModel.files != newViewModel.files,
       builder: (context, viewModel) {
+        _log.info("Building FolderChildView");
+        _log.info("Files: ${viewModel.files}");
         return Stack(
           children: [
             Scaffold(
@@ -120,19 +121,24 @@ class _FolderChildViewState extends State<FolderChildView> {
   }
 
   void updateState(DirectoryBunch newBunch) {
-    if (widget.windowIndex == 1) {
-      _log.info("We are in the first window");
-      store.dispatch(UpdateDirectoryBunchFirst(newBunch));
-    } else {
-      _log.info("We are in the second window");
-      store.dispatch(UpdateDirectoryBunchSecond(newBunch));
-    }
+    // if (widget.windowIndex == 1) {
+    //   _log.info("We are in the first window");
+    //   store.dispatch(UpdateDirectoryBunchFirst(newBunch));
+    // } else {
+    //   _log.info("We are in the second window");
+    //   store.dispatch(UpdateDirectoryBunchSecond(newBunch));
+    // }
   }
 
   Future<bool> _buildFileFilter() async {
     _log.info("Building file filter...");
+    Store<AppState> store = StoreProvider.of<AppState>(context, listen: false);
     _log.info("store is $store");
     _log.info("firstBunch is ${store.state.firstBunch}");
+    if (store.state.firstBunch == null) {
+      _log.info("First bunch is null. We have no files to show");
+      return false;
+    }
     final Directory directory = Directory(store.state.firstBunch!.path);
     _log.info("Directory is $directory");
 
@@ -189,12 +195,14 @@ class _FolderChildViewState extends State<FolderChildView> {
 
   _longPressFile(file) {
     _log.info("Handling long press for file $file");
+    Store<AppState> store = StoreProvider.of<AppState>(context, listen: false);
     store.dispatch(SelectFileAction(file, widget.windowIndex));
     return;
   }
 
   _singleTapFile(context, file) {
     _log.info("Tapped file");
+    Store<AppState> store = StoreProvider.of<AppState>(context, listen: false);
     if (widget.windowIndex == 1) {
       _log.info("We are in the first window");
       if (store.state.selectedFilesFirst!.isNotEmpty) {
