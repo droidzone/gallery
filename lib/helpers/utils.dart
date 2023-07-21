@@ -10,8 +10,8 @@ import 'package:path/path.dart' as p;
 
 final Logger _log = Logger('Utils');
 
-void sortByName(bool ascending, List<File>? filteredFiles) {
-  filteredFiles!.sort((a, b) {
+void sortByName(bool ascending, List<FileSystemEntity>? files) {
+  files!.sort((a, b) {
     return ascending
         ? basename(a.path).compareTo(basename(b.path))
         : basename(b.path).compareTo(basename(a.path));
@@ -19,8 +19,8 @@ void sortByName(bool ascending, List<File>? filteredFiles) {
   // setState(() {});
 }
 
-void sortByCreationDate(bool ascending, List<File>? filteredFiles) {
-  filteredFiles!.sort((a, b) {
+void sortByCreationDate(bool ascending, List<FileSystemEntity>? files) {
+  files!.sort((a, b) {
     return ascending
         ? a.statSync().changed.compareTo(b.statSync().changed)
         : b.statSync().changed.compareTo(a.statSync().changed);
@@ -28,8 +28,8 @@ void sortByCreationDate(bool ascending, List<File>? filteredFiles) {
   // setState(() {});
 }
 
-void sortByModificationDate(bool ascending, List<File>? filteredFiles) {
-  filteredFiles!.sort((a, b) {
+void sortByModificationDate(bool ascending, List<FileSystemEntity>? files) {
+  files!.sort((a, b) {
     return ascending
         ? a.statSync().modified.compareTo(b.statSync().modified)
         : b.statSync().modified.compareTo(a.statSync().modified);
@@ -39,6 +39,8 @@ void sortByModificationDate(bool ascending, List<File>? filteredFiles) {
 
 Future requestPermission(Permission permission) async {
   _log.info("Requesting permission: $permission");
+  // log the calling class too
+  _log.info("Requesting permission: $permission", StackTrace.current);
   PermissionStatus status = await permission.status;
   // _log.info("Permission status: $status");
 

@@ -129,3 +129,8 @@ class ToggleFileSelectionAction {
 
   ToggleFileSelectionAction(this.file);
 }
+
+class SortFilesAction {
+  final String sortOrder;
+  SortFilesAction(this.sortOrder);
+}

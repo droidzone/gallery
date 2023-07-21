@@ -57,10 +57,10 @@ class _FolderChildViewState extends State<FolderChildView> {
       converter: (store) => FilesViewModel.fromStore(store, widget.windowIndex),
       distinct: true,
       onWillChange: (previousViewModel, newViewModel) {
-        if (previousViewModel!.files == newViewModel.files) {
-          _log.info("Files not changed");
-          return;
-        }
+        // if (previousViewModel!.files == newViewModel.files) {
+        //   _log.info("Files not changed");
+        //   return;
+        // }
         _log.info("Files changed");
       },
 
@@ -132,7 +132,9 @@ class _FolderChildViewState extends State<FolderChildView> {
   Future<bool> _buildFileFilter() async {
     _log.info("Building file filter...");
     _log.info("store is $store");
+    _log.info("firstBunch is ${store.state.firstBunch}");
     final Directory directory = Directory(store.state.firstBunch!.path);
+    _log.info("Directory is $directory");
 
     try {
       List<FileSystemEntity> tmpFiles = directory

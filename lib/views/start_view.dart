@@ -77,6 +77,7 @@ class _StartViewState extends State<StartView> {
           //   return;
           // }
           _log.info("Will change");
+          _log.info("firstBunch path: ${newViewModel.firstBunch!.path}");
         },
         builder: (context, viewModel) {
           return Scaffold(
@@ -89,7 +90,7 @@ class _StartViewState extends State<StartView> {
                   color: Colors.white,
                 ),
               ),
-              actions: _buildAppBarActions(),
+              actions: _buildAppBarActions(viewModel),
             ),
             body: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
@@ -122,11 +123,9 @@ class _StartViewState extends State<StartView> {
                     height: viewModel.isSplit!
                         ? _draggableTop - 50
                         : totalHeight - _topInfoBarHeight,
-                    child: viewModel.firstBunch != null
-                        ? FolderChildView(
-                            windowIndex: 1,
-                          )
-                        : Container(),
+                    child: FolderChildView(
+                      windowIndex: 1,
+                    ),
                   ),
                   viewModel.isSplit!
                       ? Positioned(
@@ -275,31 +274,33 @@ class _StartViewState extends State<StartView> {
 
   void _copyFilesToClipBoard() {
     _log.info("Copying files to clipboard");
+    var store = StoreProvider.of<AppState>(context, listen: false);
     store.dispatch(CopyFilesToClipBoardAction());
   }
 
-  bool areAnyFilesSelected() {
-    if (store.state.activeChildWindow == 1) {
-      return store.state.selectedFilesFirst!.isNotEmpty;
-    } else {
-      return store.state.selectedFilesSecond!.isNotEmpty;
-    }
-  }
+  // bool areAnyFilesSelected() {
+  //   if (store.state.activeChildWindow == 1) {
+  //     return store.state.selectedFilesFirst!.isNotEmpty;
+  //   } else {
+  //     return store.state.selectedFilesSecond!.isNotEmpty;
+  //   }
+  // }
 
-  bool isClipBoardEmpty() {
-    if (store.state.activeChildWindow == 1) {
-      return store.state.clipboardFirst!.isEmpty;
-    } else {
-      return store.state.clipboardSecond!.isEmpty;
-    }
-  }
+  // bool isClipBoardEmpty() {
+  //   if (store.state.activeChildWindow == 1) {
+  //     return store.state.clipboardFirst!.isEmpty;
+  //   } else {
+  //     return store.state.clipboardSecond!.isEmpty;
+  //   }
+  // }
 
-  bool isClipBoardNotEmpty() {
-    return !isClipBoardEmpty();
-  }
+  // bool isClipBoardNotEmpty() {
+  //   return !isClipBoardEmpty();
+  // }
 
-  Future<void> _pasteFromClipBoard() async {
+  Future<void> _pasteFromClipBoard(MainScreenViewModel viewModel) async {
     _log.info("Pasting files from clipboard");
+    var store = StoreProvider.of<AppState>(context, listen: false);
     setState(() {
       copying = true;
     });
@@ -315,44 +316,53 @@ class _StartViewState extends State<StartView> {
 
   Future<void> clearClipBoard() {
     _log.info("Clearing clipboard");
+    var store = StoreProvider.of<AppState>(context, listen: false);
     return store.dispatch(ClearClipBoardAction());
+  }
+
+  void splitScreen() {
+    _log.info("Splitting screen");
+    var store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(UpdateScreenSplitAction(!store.state.isSplit!));
   }
 
   void _handleSorting(String result) {
     _log.info("Sorting by $result");
-    switch (result) {
-      case 'Name Ascending':
-        sortByName(true, store.state.filteredFiles);
-        break;
-      case 'Name Descending':
-        sortByName(false, store.state.filteredFiles);
-        break;
-      case 'Creation Date Ascending':
-        sortByCreationDate(true, store.state.filteredFiles);
-        break;
-      case 'Creation Date Descending':
-        sortByCreationDate(false, store.state.filteredFiles);
-        break;
-      case 'Modification Date Ascending':
-        sortByModificationDate(true, store.state.filteredFiles);
-        break;
-      case 'Modification Date Descending':
-        sortByModificationDate(false, store.state.filteredFiles);
-        break;
-    }
+    var store = StoreProvider.of<AppState>(context, listen: false);
+    store.dispatch(SortFilesAction(result));
+    // switch (result) {
+    //   case 'Name Ascending':
+    //     sortByName(true, store.state.filteredFiles);
+    //     break;
+    //   case 'Name Descending':
+    //     sortByName(false, store.state.filteredFiles);
+    //     break;
+    //   case 'Creation Date Ascending':
+    //     sortByCreationDate(true, store.state.filteredFiles);
+    //     break;
+    //   case 'Creation Date Descending':
+    //     sortByCreationDate(false, store.state.filteredFiles);
+    //     break;
+    //   case 'Modification Date Ascending':
+    //     sortByModificationDate(true, store.state.filteredFiles);
+    //     break;
+    //   case 'Modification Date Descending':
+    //     sortByModificationDate(false, store.state.filteredFiles);
+    //     break;
+    // }
   }
 
   Future<void> deleteSelectedFilesHandler() async {
-    _log.info("Deleting selected files");
-    await store.dispatch(DeleteSelectedFilesAction());
-    Navigator.of(context).pop();
-    String targetPath;
-    if (store.state.activeChildWindow == 1) {
-      targetPath = store.state.firstBunch!.path;
-    } else {
-      targetPath = store.state.secondBunch!.path;
-    }
-    store.dispatch(LoadFilesAction(targetPath, store.state.activeChildWindow!));
+    _log.info("Deleting selected files..Voided!");
+    // await store.dispatch(DeleteSelectedFilesAction());
+    // Navigator.of(context).pop();
+    // String targetPath;
+    // if (store.state.activeChildWindow == 1) {
+    //   targetPath = store.state.firstBunch!.path;
+    // } else {
+    //   targetPath = store.state.secondBunch!.path;
+    // }
+    // store.dispatch(LoadFilesAction(targetPath, store.state.activeChildWindow!));
   }
 
   PopupMenuButton<String> _buildPopupMenu() {
@@ -391,8 +401,9 @@ class _StartViewState extends State<StartView> {
     );
   }
 
-  void _showDeleteDialog(
-      BuildContext context, List<FileSystemEntity> filesToDelete) {
+  void _showDeleteDialog(BuildContext context, MainScreenViewModel viewModel) {
+    var store = StoreProvider.of<AppState>(context, listen: false);
+
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -405,7 +416,7 @@ class _StartViewState extends State<StartView> {
                   Text('Do you wish to delete these files permanenetly?',
                       style: kDialogTextStyle),
                   SizedBox(height: 10),
-                  ...filesToDelete
+                  ...viewModel.selection
                       .map((e) => Text(e.path, style: kDialogTextStyle)),
                 ],
               ),
@@ -428,9 +439,9 @@ class _StartViewState extends State<StartView> {
         });
   }
 
-  List<Widget> _buildAppBarActions() {
+  List<Widget> _buildAppBarActions(MainScreenViewModel viewModel) {
     return [
-      areAnyFilesSelected()
+      viewModel.areFilesSelected
           ? IconButton(
               onPressed: () {
                 _copyFilesToClipBoard();
@@ -440,11 +451,11 @@ class _StartViewState extends State<StartView> {
                 color: Theme.of(context).colorScheme.inversePrimary,
               ))
           : Container(),
-      isClipBoardNotEmpty()
+      viewModel.isClipBoardEmpty == false
           ? IconButton(
               onPressed: () {
                 _log.info("Pressed paste");
-                showPasteDialog(context, store);
+                showPasteDialog(context, viewModel);
               },
               icon: Icon(
                 Icons.content_paste_sharp,
@@ -452,15 +463,11 @@ class _StartViewState extends State<StartView> {
               ),
             )
           : Container(),
-      areAnyFilesSelected()
+      viewModel.areFilesSelected
           ? IconButton(
               onPressed: () {
                 _log.info("Pressed delete");
-                _showDeleteDialog(
-                    context,
-                    store.state.activeChildWindow == 1
-                        ? store.state.selectedFilesFirst!
-                        : store.state.selectedFilesSecond!);
+                _showDeleteDialog(context, viewModel);
               },
               icon: Icon(
                 Icons.delete,
@@ -470,10 +477,10 @@ class _StartViewState extends State<StartView> {
       IconButton(
         onPressed: () {
           _log.info("Pressed split screen");
-          store.dispatch(UpdateScreenSplitAction(!store.state.isSplit!));
+          splitScreen();
         },
         icon: Icon(
-          store.state.isSplit != true
+          viewModel.isSplit != true
               ? Icons.splitscreen_outlined
               : Icons.splitscreen,
           color: Theme.of(context).colorScheme.inversePrimary,
@@ -540,7 +547,7 @@ class _StartViewState extends State<StartView> {
                           ),
                         );
                       });
-                  await _pasteFromClipBoard();
+                  await _pasteFromClipBoard(viewModel);
                   Navigator.of(context).pop();
                   Navigator.of(context).pop();
                 },

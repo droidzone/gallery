@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:gallery/helpers/utils.dart';
 import 'package:gallery/stores/actions.dart';
 import 'package:gallery/stores/app_state.dart';
 import 'package:logging/logging.dart';
@@ -68,8 +69,42 @@ AppState updateReducer(AppState state, action) {
       return _handleSelectDeselctFileAction(state, action);
     case ToggleFileSelectionAction:
       return _toggleFileSelection(state, action);
+    case SortFilesAction:
+      return _sortFiles(state, action);
   }
   return state;
+}
+
+AppState _sortFiles(AppState state, SortFilesAction action) {
+  _log.info("_sortFiles reducer");
+  _log.info("action.sortBy: ${action.sortOrder}");
+  List<FileSystemEntity> files =
+      (state.activeChildWindow == 1) ? state.firstFiles! : state.secondFiles!;
+  switch (action.sortOrder) {
+    case 'Name Ascending':
+      sortByName(true, files);
+      break;
+    case 'Name Descending':
+      sortByName(false, files);
+      break;
+    case 'Creation Date Ascending':
+      sortByCreationDate(true, files);
+      break;
+    case 'Creation Date Descending':
+      sortByCreationDate(false, files);
+      break;
+    case 'Modification Date Ascending':
+      sortByModificationDate(true, files);
+      break;
+    case 'Modification Date Descending':
+      sortByModificationDate(false, files);
+      break;
+  }
+  if (state.activeChildWindow == 1) {
+    return state.copyWith(filesFirst: files);
+  } else {
+    return state.copyWith(filesSecond: files);
+  }
 }
 
 AppState _toggleFileSelection(
