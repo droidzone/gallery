@@ -55,6 +55,17 @@ class _FolderChildViewState extends State<FolderChildView> {
   Widget build(BuildContext context) {
     return StoreConnector<AppState, FilesViewModel>(
       converter: (store) => FilesViewModel.fromStore(store, widget.windowIndex),
+      distinct: true,
+      onWillChange: (previousViewModel, newViewModel) {
+        if (previousViewModel!.files == newViewModel.files) {
+          _log.info("Files not changed");
+          return;
+        }
+        _log.info("Files changed");
+      },
+
+      //  shouldUpdate: (previousViewModel, newViewModel) =>
+      //     previousViewModel.files != newViewModel.files,
       builder: (context, viewModel) {
         return Stack(
           children: [

@@ -49,7 +49,7 @@ class _StartViewState extends State<StartView> {
   late double bottomChildHeight;
   DirectoryBunch? directorybunchFirst;
   DirectoryBunch? directorybunchSecond;
-  late Store<AppState> store;
+  // late Store<AppState> store;
   bool copying = false;
 
   @override
@@ -63,167 +63,175 @@ class _StartViewState extends State<StartView> {
       setState(() {});
     });
     _listMediaDirectories();
-    store = StoreProvider.of<AppState>(context, listen: false);
+    // store = StoreProvider.of<AppState>(context, listen: false);
   }
 
   @override
   Widget build(BuildContext context) {
     return StoreConnector<AppState, MainScreenViewModel>(
-      converter: MainScreenViewModel.fromStore,
-      distinct: true, // Only call builder if the ViewModel changes
-      builder: (context, viewModel) {
-        return Scaffold(
-          key: _scaffoldKey,
-          appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            title: const Text(
-              'Super Gallery',
-              style: TextStyle(
-                color: Colors.white,
+        converter: (store) => MainScreenViewModel.fromStore(store),
+        distinct: true,
+        onWillChange: (previousViewModel, newViewModel) {
+          // if (previousViewModel!.files == newViewModel.files) {
+          //   _log.info("Files not changed");
+          //   return;
+          // }
+          _log.info("Will change");
+        },
+        builder: (context, viewModel) {
+          return Scaffold(
+            key: _scaffoldKey,
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              title: const Text(
+                'Super Gallery',
+                style: TextStyle(
+                  color: Colors.white,
+                ),
               ),
+              actions: _buildAppBarActions(),
             ),
-            actions: _buildAppBarActions(),
-          ),
-          body: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final totalHeight = constraints.maxHeight;
-              topChildHeight =
-                  (totalHeight - _topInfoBarHeight - _draggableBarHeight) / 2;
-              bottomChildHeight = totalHeight -
-                  _draggableTop -
-                  50; //Final subtraction is for the bottom nav
-              return Stack(children: [
-                Positioned(
-                  top: _top,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    color: Colors.grey[400],
-                    height: _topInfoBarHeight, // Standard AppBar height
-                    child: store.state.firstBunch != null
-                        ? InfoBar(
+            body: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                final totalHeight = constraints.maxHeight;
+                topChildHeight =
+                    (totalHeight - _topInfoBarHeight - _draggableBarHeight) / 2;
+                bottomChildHeight = totalHeight -
+                    _draggableTop -
+                    50; //Final subtraction is for the bottom nav
+                return Stack(children: [
+                  Positioned(
+                    top: _top,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: Colors.grey[400],
+                      height: _topInfoBarHeight, // Standard AppBar height
+                      child: viewModel.firstBunch != null
+                          ? InfoBar(
+                              windowIndex: 1,
+                              scaffoldkey: _scaffoldKey,
+                            )
+                          : Container(),
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: _top + _topInfoBarHeight,
+                    height: viewModel.isSplit!
+                        ? _draggableTop - 50
+                        : totalHeight - _topInfoBarHeight,
+                    child: viewModel.firstBunch != null
+                        ? FolderChildView(
                             windowIndex: 1,
-                            scaffoldkey: _scaffoldKey,
                           )
                         : Container(),
                   ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: _top + _topInfoBarHeight,
-                  height: store.state.isSplit!
-                      ? _draggableTop - 50
-                      : totalHeight - _topInfoBarHeight,
-                  child: store.state.firstBunch != null
-                      ? FolderChildView(
-                          windowIndex: 1,
-                        )
-                      : Container(),
-                ),
-                store.state.isSplit!
-                    ? Positioned(
-                        top: _draggableTop,
-                        left: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onVerticalDragUpdate: (DragUpdateDetails details) {
-                            setState(() {
-                              double delta = details.delta.dy;
-                              _draggableTop += delta;
-                              if (_draggableTop < (_top + _topInfoBarHeight)) {
-                                _draggableTop = _top + _topInfoBarHeight;
-                              }
-                            });
-                          },
-                          child: Container(
-                            color: Colors.grey[400],
-                            height:
-                                _draggableBarHeight, // Standard AppBar height
-                            child: Center(
-                              child: InfoBar(
-                                windowIndex: 2,
-                                scaffoldkey: _scaffoldKey,
+                  viewModel.isSplit!
+                      ? Positioned(
+                          top: _draggableTop,
+                          left: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onVerticalDragUpdate: (DragUpdateDetails details) {
+                              setState(() {
+                                double delta = details.delta.dy;
+                                _draggableTop += delta;
+                                if (_draggableTop <
+                                    (_top + _topInfoBarHeight)) {
+                                  _draggableTop = _top + _topInfoBarHeight;
+                                }
+                              });
+                            },
+                            child: Container(
+                              color: Colors.grey[400],
+                              height:
+                                  _draggableBarHeight, // Standard AppBar height
+                              child: Center(
+                                child: InfoBar(
+                                  windowIndex: 2,
+                                  scaffoldkey: _scaffoldKey,
+                                ),
                               ),
                             ),
                           ),
+                        )
+                      : Container(),
+                  viewModel.isSplit!
+                      ? Positioned(
+                          top: _draggableTop +
+                              _draggableBarHeight, // Adding the height of the draggable bar
+                          left: 0,
+                          right: 0,
+                          height: bottomChildHeight,
+                          child: FolderChildView(
+                            windowIndex: 2,
+                          ),
+                        )
+                      : Container(),
+                ]);
+              },
+            ),
+            bottomNavigationBar: const BottomNavigation(),
+            endDrawer: Drawer(
+              child: Container(
+                color: Colors.purple[100],
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 100,
+                      child: DrawerHeader(
+                        child: Text(
+                          'Clipboard',
+                          style: kDrawerHeaderStyle,
                         ),
-                      )
-                    : Container(),
-                store.state.isSplit!
-                    ? Positioned(
-                        top: _draggableTop +
-                            _draggableBarHeight, // Adding the height of the draggable bar
-                        left: 0,
-                        right: 0,
-                        height: bottomChildHeight,
-                        child: FolderChildView(
-                          windowIndex: 2,
-                        ),
-                      )
-                    : Container(),
-              ]);
-            },
-          ),
-          bottomNavigationBar: const BottomNavigation(),
-          endDrawer: Drawer(
-            child: Container(
-              color: Colors.purple[100],
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 100,
-                    child: DrawerHeader(
-                      child: Text(
-                        'Clipboard',
-                        style: kDrawerHeaderStyle,
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: Stack(
-                      // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        ListView.builder(
-                          itemCount: store.state.combinedClipboard.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            return imageAvatar(
-                                store.state.combinedClipboard[index]);
-                          },
-                        ),
-                        Align(
-                          alignment: Alignment.bottomCenter,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: <Widget>[
-                                ElevatedButton(
-                                  onPressed: () {
-                                    clearClipBoard();
-                                  },
-                                  child: Text('Clear'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    showPasteDialog(context, store);
-                                  },
-                                  child: Text('Paste'),
-                                ),
-                              ],
+                    Expanded(
+                      child: Stack(
+                        // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ListView.builder(
+                            itemCount: viewModel.combinedClipboard.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return imageAvatar(
+                                  viewModel.combinedClipboard[index]);
+                            },
+                          ),
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: <Widget>[
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      clearClipBoard();
+                                    },
+                                    child: Text('Clear'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      showPasteDialog(context, viewModel);
+                                    },
+                                    child: Text('Paste'),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        });
   }
 
   void _listMediaDirectories() async {
@@ -254,6 +262,7 @@ class _StartViewState extends State<StartView> {
       imgPath: null,
     );
     _log.info("Setting starting directory to ${tmpFirst.name}");
+    var store = StoreProvider.of<AppState>(context, listen: false);
     await store.dispatch(UpdateDirectoryBunchFirst(tmpFirst));
     await store.dispatch(UpdateDirectoryBunchSecond(tmpFirst));
 
@@ -474,11 +483,12 @@ class _StartViewState extends State<StartView> {
     ];
   }
 
-  Future<void> showPasteDialog(BuildContext context, Store store) async {
+  Future<void> showPasteDialog(
+      BuildContext context, MainScreenViewModel viewModel) async {
     return showDialog(
         context: context,
         builder: (BuildContext context) {
-          _log.info("state is ${store.state}");
+          // _log.info("state is ${store.state}");
           return AlertDialog(
             title: const Text(
               'Start Copying Files?',
@@ -495,9 +505,9 @@ class _StartViewState extends State<StartView> {
                   ),
                   Text(
                     'Files will be copied to ' +
-                        (store.state.activeChildWindow == 1
-                            ? store.state.firstBunch!.path
-                            : store.state.secondBunch!.path),
+                        (viewModel.activeChildWindow == 1
+                            ? viewModel.firstBunch!.path
+                            : viewModel.secondBunch!.path),
                     style: kDialogTextStyle,
                   ),
                 ],
@@ -523,7 +533,7 @@ class _StartViewState extends State<StartView> {
                                 SizedBox(
                                   height: 10,
                                 ),
-                                Text(store.state.filesLeftToCopy.toString() +
+                                Text(viewModel.filesLeftToCopy.toString() +
                                     'left to copy'),
                               ],
                             ),

@@ -68,8 +68,10 @@ class _FileWidgetState extends State<FileWidget> {
       onWillChange: (oldViewModel, newViewModel) {
         // If the selection state of the file hasn't changed, return early and prevent a rebuild
         if (oldViewModel!.isSelected == newViewModel.isSelected) {
+          _log.info("File selection not changed");
           return;
         }
+        _log.info("File selection changed");
       },
       builder: (context, viewModel) {
         String fileName = p.basename(viewModel.file.path);
@@ -94,9 +96,8 @@ class _FileWidgetState extends State<FileWidget> {
                     _log.info("Selected files: $selectedFiles");
 
                     // Dispatch an action instead of mutating the state directly
-                    // StoreProvider.of<AppState>(context).dispatch(
-                    //     ToggleFileSelectionAction(
-                    //         viewModel.file, widget.windowIndex));
+                    StoreProvider.of<AppState>(context)
+                        .dispatch(ToggleFileSelectionAction(viewModel.file));
                   },
                   onLongPress: () {
                     _log.info("Long pressed on file ${widget.file.path}");
